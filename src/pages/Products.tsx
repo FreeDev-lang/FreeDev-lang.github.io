@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { productsApi } from '../lib/api'
@@ -6,7 +6,7 @@ import ProductCard from '../components/ProductCard'
 import { Filter, X } from 'lucide-react'
 
 export default function Products() {
-  const [searchParams, setSearchParams] = useSearchParams()
+  const [searchParams] = useSearchParams()
   const [filters, setFilters] = useState({
     searchTerm: searchParams.get('search') || '',
     category: searchParams.get('category') || '',

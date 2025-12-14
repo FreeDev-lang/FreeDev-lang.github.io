@@ -1,24 +1,13 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { wishlistApi } from '../lib/api'
-import { Heart, ShoppingCart } from 'lucide-react'
+import { Heart } from 'lucide-react'
 import ProductCard from '../components/ProductCard'
-import toast from 'react-hot-toast'
 
 export default function Wishlist() {
-  const queryClient = useQueryClient()
-
   const { data: wishlist, isLoading } = useQuery({
     queryKey: ['wishlist'],
     queryFn: () => wishlistApi.getAll().then(res => res.data),
-  })
-
-  const removeMutation = useMutation({
-    mutationFn: (productId: number) => wishlistApi.remove(productId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['wishlist'] })
-      toast.success('Removed from wishlist')
-    },
   })
 
   if (isLoading) {

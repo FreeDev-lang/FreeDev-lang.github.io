@@ -1,10 +1,9 @@
-import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { authApi } from '../lib/api'
 import { useAuthStore } from '../store/authStore'
 import toast from 'react-hot-toast'
-import { Mail, Share2 } from 'lucide-react'
+import { Share2 } from 'lucide-react'
 
 export default function Login() {
   const navigate = useNavigate()
@@ -24,7 +23,7 @@ export default function Login() {
 
   const handleSocialLogin = async (provider: string) => {
     // In a real app, you'd integrate with OAuth providers
-    toast.info(`${provider} login integration coming soon`)
+    toast(`${provider} login integration coming soon`)
   }
 
   const handleGuestLogin = async () => {

@@ -7,9 +7,7 @@ import toast from 'react-hot-toast'
 export default function Register() {
   const navigate = useNavigate()
   const { setAuth } = useAuthStore()
-  const { register, handleSubmit, formState: { errors }, watch } = useForm()
-
-  const password = watch('password')
+  const { register, handleSubmit, formState: { errors } } = useForm()
 
   const onSubmit = async (data: any) => {
     try {

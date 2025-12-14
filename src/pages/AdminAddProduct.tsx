@@ -8,7 +8,7 @@ import toast from 'react-hot-toast'
 
 export default function AdminAddProduct() {
   const navigate = useNavigate()
-  const { register, handleSubmit, formState: { errors }, watch, setValue } = useForm()
+  const { register, handleSubmit, formState: { errors } } = useForm()
   const [modelFile, setModelFile] = useState<File | null>(null)
   const [imageFiles, setImageFiles] = useState<File[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -58,7 +58,7 @@ export default function AdminAddProduct() {
       
       // Files
       formData.append('modelFile', modelFile)
-      imageFiles.forEach((file, index) => {
+      imageFiles.forEach((file) => {
         formData.append('imageFiles', file)
       })
 
