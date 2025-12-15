@@ -26,11 +26,9 @@ jobs:
           node-version: '18'
       
       - name: Install dependencies
-        working-directory: ./fria-frontend
         run: npm ci
       
       - name: Build
-        working-directory: ./fria-frontend
         env:
           # Set base path to '/' for root GitHub Pages (freedev-lang.github.io)
           # If deploying to a subdirectory, change this to '/repo-name/'
@@ -38,13 +36,13 @@ jobs:
         run: npm run build
       
       - name: Add .nojekyll file
-        run: touch ./fria-frontend/dist/.nojekyll
+        run: touch ./dist/.nojekyll
       
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./fria-frontend/dist
+          publish_dir: ./dist
           # Deploying to master branch since GitHub Pages source is configured to use master
           # IMPORTANT: Make sure GitHub Pages is set to serve from master branch root
           # Repository Settings > Pages > Source: Deploy from a branch > master > / (root)
