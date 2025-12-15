@@ -87,7 +87,11 @@ export const ordersApi = {
   create: (data: any) => api.post('/orders', data),
   getAll: () => api.get('/orders'),
   getById: (id: number) => api.get(`/orders/${id}`),
+  getByIdForAdmin: (id: number) => api.get(`/orders/${id}/admin`),
   cancel: (id: number) => api.post(`/orders/${id}/cancel`),
+  updateStatus: (id: number, data: any) => api.put(`/orders/${id}/status`, data),
+  refund: (id: number, data: any) => api.post(`/orders/${id}/refund`, data),
+  updateNotes: (id: number, data: any) => api.put(`/orders/${id}/notes`, data),
 }
 
 // Wishlist API
@@ -121,6 +125,96 @@ export const adminApi = {
   getAllUsers: () => api.get('/admin/users'),
   makeAdmin: (id: number) => api.post(`/admin/users/${id}/make-admin`),
   removeAdmin: (id: number) => api.post(`/admin/users/${id}/remove-admin`),
+  makeSuperAdmin: (id: number) => api.post(`/admin/users/${id}/make-super-admin`),
+  removeSuperAdmin: (id: number) => api.post(`/admin/users/${id}/remove-super-admin`),
+}
+
+// Inventory API
+export const inventoryApi = {
+  getLowStockAlerts: (threshold?: number) => api.get('/inventory/low-stock', { params: { threshold } }),
+  adjustStock: (data: any) => api.post('/inventory/adjust', data),
+  getStockAdjustments: (params?: any) => api.get('/inventory/adjustments', { params }),
+  getStockReport: () => api.get('/inventory/report'),
+}
+
+// Customers API (CRM)
+export const customersApi = {
+  getAll: (search?: string) => api.get('/customers', { params: { search } }),
+  getById: (id: number) => api.get(`/customers/${id}`),
+  resetPassword: (id: number, data: any) => api.post(`/customers/${id}/reset-password`, data),
+  deactivate: (id: number) => api.post(`/customers/${id}/deactivate`),
+  activate: (id: number) => api.post(`/customers/${id}/activate`),
+  export: () => api.get('/customers/export', { responseType: 'blob' }),
+}
+
+// Marketing API
+export const marketingApi = {
+  getActiveBanners: () => api.get('/marketing/banners'),
+  getAllBanners: () => api.get('/marketing/banners/all'),
+  getBanner: (id: number) => api.get(`/marketing/banners/${id}`),
+  createBanner: (data: any) => api.post('/marketing/banners', data),
+  updateBanner: (id: number, data: any) => api.put(`/marketing/banners/${id}`, data),
+  deleteBanner: (id: number) => api.delete(`/marketing/banners/${id}`),
+  getFeaturedProducts: () => api.get('/marketing/featured-products'),
+  setFeaturedProducts: (data: any) => api.post('/marketing/featured-products', data),
+}
+
+// Analytics API
+export const analyticsApi = {
+  getDashboardStats: (params?: any) => api.get('/analytics/dashboard', { params }),
+  getSalesReport: (fromDate: string, toDate: string) => api.get('/analytics/sales', { params: { fromDate, toDate } }),
+  getTopProducts: (params?: any) => api.get('/analytics/top-products', { params }),
+  getTopBrands: (params?: any) => api.get('/analytics/top-brands', { params }),
+  getCouponUsage: (params?: any) => api.get('/analytics/coupon-usage', { params }),
+  getCustomerAnalytics: (params?: any) => api.get('/analytics/customers', { params }),
+}
+
+// Activity Logs API
+export const activityLogsApi = {
+  getAll: (params?: any) => api.get('/activitylogs', { params }),
+}
+
+// Platform API (SuperAdmin only)
+export const platformApi = {
+  shutdown: () => api.post('/platform/shutdown'),
+  restart: () => api.post('/platform/restart'),
+  getStatus: () => api.get('/platform/status'),
+}
+
+// Shipping Methods API
+export const shippingMethodsApi = {
+  getAll: () => api.get('/shippingmethods'),
+  getAllActive: () => api.get('/shippingmethods/all'),
+  getById: (id: number) => api.get(`/shippingmethods/${id}`),
+  create: (data: any) => api.post('/shippingmethods', data),
+  update: (id: number, data: any) => api.put(`/shippingmethods/${id}`, data),
+  delete: (id: number) => api.delete(`/shippingmethods/${id}`),
+}
+
+
+// Product Categories API
+export const categoriesApi = {
+  getAll: (includeInactive?: boolean) => api.get('/productcategories', { params: { includeInactive } }),
+  getById: (id: number) => api.get(`/productcategories/${id}`),
+  getBySlug: (slug: string) => api.get(`/productcategories/slug/${slug}`),
+  create: (data: any) => api.post('/productcategories', data),
+  update: (id: number, data: any) => api.put(`/productcategories/${id}`, data),
+  delete: (id: number) => api.delete(`/productcategories/${id}`),
+  checkExists: (data: any) => api.post('/productcategories/check-exists', data),
+}
+
+// Receipts API
+export const receiptsApi = {
+  getOrderReceipt: (orderId: number) => api.get(`/receipts/order/${orderId}`, { responseType: 'blob' }),
+  getPaymentReceipt: (orderId: number) => api.get(`/receipts/payment/${orderId}`, { responseType: 'blob' }),
+}
+
+// QR Code API
+export const qrCodeApi = {
+  getProductQRCode: (productId: number, size?: number) => api.get(`/qrcode/product/${productId}`, { 
+    params: { size },
+    responseType: 'blob' 
+  }),
 }
 
 // Setup API (for creating first admin)

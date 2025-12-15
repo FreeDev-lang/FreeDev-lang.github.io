@@ -8,6 +8,7 @@ interface User {
   lastName: string
   phoneNumber?: string
   isAdmin: boolean
+  isSuperAdmin?: boolean
   isGuest: boolean
 }
 

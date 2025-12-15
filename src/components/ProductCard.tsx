@@ -6,6 +6,8 @@ import { useAuthStore } from '../store/authStore'
 import { cartApi, wishlistApi } from '../lib/api'
 import toast from 'react-hot-toast'
 import { useQueryClient } from '@tanstack/react-query'
+import { useCurrency } from '../utils/currency'
+import { useTranslation } from '../utils/i18n'
 
 interface ProductCardProps {
   product: any
@@ -14,6 +16,8 @@ interface ProductCardProps {
 export default function ProductCard({ product }: ProductCardProps) {
   const [isWishlisted, setIsWishlisted] = useState(false)
   const { isAuthenticated } = useAuthStore()
+  const { formatCurrency } = useCurrency()
+  const { t } = useTranslation()
   const queryClient = useQueryClient()
 
   const handleAddToCart = async (e: React.MouseEvent) => {
@@ -21,16 +25,16 @@ export default function ProductCard({ product }: ProductCardProps) {
     e.stopPropagation()
     
     if (!isAuthenticated()) {
-      toast.error('Please sign in to add items to cart')
+      toast.error(t('common.signInToAdd'))
       return
     }
 
     try {
       await cartApi.add({ furnitureItemId: product.id, quantity: 1 })
-      toast.success('Added to cart!')
+      toast.success(t('common.addedToCart'))
       queryClient.invalidateQueries({ queryKey: ['cart'] })
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to add to cart')
+      toast.error(error.response?.data?.message || t('common.failedToAdd'))
     }
   }
 
@@ -39,7 +43,7 @@ export default function ProductCard({ product }: ProductCardProps) {
     e.stopPropagation()
 
     if (!isAuthenticated()) {
-      toast.error('Please sign in to save items')
+      toast.error(t('common.signInToSave'))
       return
     }
 
@@ -47,15 +51,15 @@ export default function ProductCard({ product }: ProductCardProps) {
       if (isWishlisted) {
         await wishlistApi.remove(product.id)
         setIsWishlisted(false)
-        toast.success('Removed from wishlist')
+        toast.success(t('common.removedFromWishlist'))
       } else {
         await wishlistApi.add(product.id)
         setIsWishlisted(true)
-        toast.success('Added to wishlist!')
+        toast.success(t('common.addedToWishlist'))
       }
       queryClient.invalidateQueries({ queryKey: ['wishlist'] })
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to update wishlist')
+      toast.error(error.response?.data?.message || t('common.failedToUpdate'))
     }
   }
 
@@ -77,17 +81,17 @@ export default function ProductCard({ product }: ProductCardProps) {
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-gray-400">
-              No Image
+              {t('products.noImage')}
             </div>
           )}
           {product.discountPrice && (
             <span className="absolute top-2 left-2 bg-red-500 text-white px-2 py-1 rounded text-sm font-semibold">
-              Sale
+              {t('products.sale')}
             </span>
           )}
           {product.isFeatured && (
             <span className="absolute top-2 right-2 bg-primary-600 text-white px-2 py-1 rounded text-sm font-semibold">
-              Featured
+              {t('products.featured')}
             </span>
           )}
         </div>
@@ -96,9 +100,9 @@ export default function ProductCard({ product }: ProductCardProps) {
           <p className="text-sm text-gray-600 mb-2">{product.category}</p>
           <div className="flex items-center justify-between">
             <div>
-              <span className="text-lg font-bold text-gray-900">${price.toFixed(2)}</span>
+              <span className="text-lg font-bold text-gray-900">{formatCurrency(price)}</span>
               {originalPrice && (
-                <span className="text-sm text-gray-500 line-through ml-2">${originalPrice.toFixed(2)}</span>
+                <span className="text-sm text-gray-500 line-through ml-2">{formatCurrency(originalPrice)}</span>
               )}
             </div>
             {product.averageRating && (

@@ -1,10 +1,13 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
-import { productsApi } from '../lib/api'
-import { Plus, Edit, Trash2 } from 'lucide-react'
+import { productsApi, qrCodeApi } from '../lib/api'
+import { Plus, Edit, Trash2, QrCode } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { useState } from 'react'
+import { useCurrency } from '../utils/currency'
 
 export default function AdminProducts() {
+  const { formatCurrency } = useCurrency()
   const queryClient = useQueryClient()
 
   const { data: products, isLoading } = useQuery({
@@ -67,7 +70,7 @@ export default function AdminProducts() {
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{product.category}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">${product.price.toFixed(2)}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">{formatCurrency(product.price)}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{product.stockQuantity}</td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <span className={`px-2 py-1 text-xs rounded-full ${
@@ -78,6 +81,27 @@ export default function AdminProducts() {
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                   <div className="flex items-center gap-2">
+                    <button
+                      onClick={async () => {
+                        try {
+                          const response = await qrCodeApi.getProductQRCode(product.id, 300)
+                          const url = URL.createObjectURL(response.data)
+                          const link = document.createElement('a')
+                          link.href = url
+                          link.setAttribute('download', `product_qr_${product.id}.png`)
+                          document.body.appendChild(link)
+                          link.click()
+                          link.remove()
+                          toast.success('QR code downloaded')
+                        } catch (error) {
+                          toast.error('Failed to generate QR code')
+                        }
+                      }}
+                      className="text-blue-600 hover:text-blue-700"
+                      title="Download QR Code"
+                    >
+                      <QrCode className="w-4 h-4" />
+                    </button>
                     <Link
                       to={`/admin/products/${product.id}/edit`}
                       className="text-primary-600 hover:text-primary-700"

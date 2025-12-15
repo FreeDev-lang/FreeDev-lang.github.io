@@ -6,10 +6,12 @@ import { useAuthStore } from '../store/authStore'
 import { useCartStore } from '../store/cartStore'
 import toast from 'react-hot-toast'
 import { useEffect } from 'react'
+import { useCurrency } from '../utils/currency'
 
 export default function Cart() {
   const { isAuthenticated } = useAuthStore()
   const { setCart } = useCartStore()
+  const { formatCurrency } = useCurrency()
   const queryClient = useQueryClient()
 
   const { data: cart, isLoading } = useQuery({
@@ -86,7 +88,7 @@ export default function Cart() {
                 )}
                 <div className="flex-1">
                   <h3 className="font-semibold text-lg mb-1">{item.productName}</h3>
-                  <p className="text-gray-600 mb-2">${item.unitPrice.toFixed(2)} each</p>
+                  <p className="text-gray-600 mb-2">{formatCurrency(item.unitPrice)} each</p>
                   <div className="flex items-center gap-4">
                     <div className="flex items-center gap-2">
                       <button
@@ -103,7 +105,7 @@ export default function Cart() {
                         <Plus className="w-4 h-4" />
                       </button>
                     </div>
-                    <span className="font-semibold">${item.totalPrice.toFixed(2)}</span>
+                    <span className="font-semibold">{formatCurrency(item.totalPrice)}</span>
                   </div>
                 </div>
                 <button
@@ -123,26 +125,26 @@ export default function Cart() {
             <div className="space-y-2 mb-4">
               <div className="flex justify-between text-gray-600">
                 <span>Subtotal</span>
-                <span>${cart.subTotal.toFixed(2)}</span>
+                <span>{formatCurrency(cart.subTotal)}</span>
               </div>
               <div className="flex justify-between text-gray-600">
                 <span>Shipping</span>
-                <span>${cart.shippingCost.toFixed(2)}</span>
+                <span>{formatCurrency(cart.shippingCost)}</span>
               </div>
               <div className="flex justify-between text-gray-600">
                 <span>Tax</span>
-                <span>${cart.taxAmount.toFixed(2)}</span>
+                <span>{formatCurrency(cart.taxAmount)}</span>
               </div>
               {cart.discountAmount > 0 && (
                 <div className="flex justify-between text-green-600">
                   <span>Discount</span>
-                  <span>-${cart.discountAmount.toFixed(2)}</span>
+                  <span>-{formatCurrency(cart.discountAmount)}</span>
                 </div>
               )}
               <div className="border-t pt-2 mt-2">
                 <div className="flex justify-between text-lg font-bold">
                   <span>Total</span>
-                  <span>${cart.totalAmount.toFixed(2)}</span>
+                  <span>{formatCurrency(cart.totalAmount)}</span>
                 </div>
               </div>
             </div>

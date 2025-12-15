@@ -5,10 +5,12 @@ import { useNavigate } from 'react-router-dom'
 import { cartApi, ordersApi, addressesApi } from '../lib/api'
 import { useCartStore } from '../store/cartStore'
 import toast from 'react-hot-toast'
+import { useCurrency } from '../utils/currency'
 
 export default function Checkout() {
   const navigate = useNavigate()
   const { clearCart } = useCartStore()
+  const { formatCurrency } = useCurrency()
   
   const { data: cart } = useQuery({
     queryKey: ['cart'],
@@ -121,20 +123,20 @@ export default function Checkout() {
             <div className="space-y-2 mb-4">
               <div className="flex justify-between text-gray-600">
                 <span>Subtotal</span>
-                <span>${cart.subTotal.toFixed(2)}</span>
+                <span>{formatCurrency(cart.subTotal)}</span>
               </div>
               <div className="flex justify-between text-gray-600">
                 <span>Shipping</span>
-                <span>${cart.shippingCost.toFixed(2)}</span>
+                <span>{formatCurrency(cart.shippingCost)}</span>
               </div>
               <div className="flex justify-between text-gray-600">
                 <span>Tax</span>
-                <span>${cart.taxAmount.toFixed(2)}</span>
+                <span>{formatCurrency(cart.taxAmount)}</span>
               </div>
               <div className="border-t pt-2 mt-2">
                 <div className="flex justify-between text-lg font-bold">
                   <span>Total</span>
-                  <span>${cart.totalAmount.toFixed(2)}</span>
+                  <span>{formatCurrency(cart.totalAmount)}</span>
                 </div>
               </div>
             </div>

@@ -12,8 +12,26 @@ export default function AdminRoute({ children }: AdminRouteProps) {
     return <Navigate to="/login" replace />
   }
 
-  if (!user?.isAdmin) {
+  if (!user?.isAdmin && !user?.isSuperAdmin) {
     return <Navigate to="/" replace />
+  }
+
+  return <>{children}</>
+}
+
+interface SuperAdminRouteProps {
+  children: React.ReactNode
+}
+
+export function SuperAdminRoute({ children }: SuperAdminRouteProps) {
+  const { user, isAuthenticated } = useAuthStore()
+
+  if (!isAuthenticated()) {
+    return <Navigate to="/login" replace />
+  }
+
+  if (!user?.isSuperAdmin) {
+    return <Navigate to="/admin/dashboard" replace />
   }
 
   return <>{children}</>

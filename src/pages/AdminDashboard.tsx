@@ -1,11 +1,11 @@
 import { useQuery } from '@tanstack/react-query'
-import { adminApi } from '../lib/api'
-import { Package, Users, ShoppingCart, DollarSign, TrendingUp } from 'lucide-react'
+import { analyticsApi } from '../lib/api'
+import { Package, Users, ShoppingCart, DollarSign, TrendingUp, AlertTriangle } from 'lucide-react'
 
 export default function AdminDashboard() {
   const { data: stats, isLoading } = useQuery({
-    queryKey: ['admin-dashboard'],
-    queryFn: () => adminApi.getDashboardStats().then(res => res.data),
+    queryKey: ['analytics-dashboard'],
+    queryFn: () => analyticsApi.getDashboardStats().then(res => res.data),
   })
 
   if (isLoading) {
@@ -14,16 +14,10 @@ export default function AdminDashboard() {
 
   const statCards = [
     {
-      title: 'Total Products',
-      value: stats?.totalProducts || 0,
-      icon: Package,
-      color: 'bg-blue-500',
-    },
-    {
-      title: 'Active Products',
-      value: stats?.activeProducts || 0,
-      icon: TrendingUp,
-      color: 'bg-green-500',
+      title: 'Total Revenue',
+      value: `$${stats?.totalRevenue?.toFixed(2) || '0.00'}`,
+      icon: DollarSign,
+      color: 'bg-green-600',
     },
     {
       title: 'Total Orders',
@@ -38,16 +32,34 @@ export default function AdminDashboard() {
       color: 'bg-yellow-500',
     },
     {
-      title: 'Total Users',
-      value: stats?.totalUsers || 0,
+      title: 'Total Products',
+      value: stats?.totalProducts || 0,
+      icon: Package,
+      color: 'bg-blue-500',
+    },
+    {
+      title: 'Low Stock Products',
+      value: stats?.lowStockProducts || 0,
+      icon: AlertTriangle,
+      color: 'bg-orange-500',
+    },
+    {
+      title: 'Total Customers',
+      value: stats?.totalCustomers || 0,
       icon: Users,
       color: 'bg-indigo-500',
     },
     {
-      title: 'Total Revenue',
-      value: `$${stats?.totalRevenue?.toFixed(2) || '0.00'}`,
-      icon: DollarSign,
-      color: 'bg-green-600',
+      title: 'New Customers',
+      value: stats?.newCustomers || 0,
+      icon: Users,
+      color: 'bg-green-500',
+    },
+    {
+      title: 'Average Order Value',
+      value: `$${stats?.averageOrderValue?.toFixed(2) || '0.00'}`,
+      icon: TrendingUp,
+      color: 'bg-teal-500',
     },
   ]
 

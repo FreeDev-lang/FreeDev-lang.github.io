@@ -1,13 +1,34 @@
-import { Outlet, Link, useLocation } from 'react-router-dom'
-import { LayoutDashboard, Package, Users } from 'lucide-react'
+import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom'
+import { LayoutDashboard, Package, Users, Warehouse, UsersRound, Megaphone, BarChart3, FileText, Truck, Shield, FolderTree, LogOut } from 'lucide-react'
+import { useAuthStore } from '../store/authStore'
+import { useTranslation } from '../utils/i18n'
 
 export default function AdminLayout() {
   const location = useLocation()
+  const navigate = useNavigate()
+  const { user, logout } = useAuthStore()
+  const { t } = useTranslation()
+
+  const handleLogout = () => {
+    logout()
+    navigate('/')
+  }
 
   const navItems = [
-    { path: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { path: '/admin/products', label: 'Products', icon: Package },
-    { path: '/admin/users', label: 'Users', icon: Users },
+    { path: '/admin/dashboard', label: t('admin.dashboard'), icon: LayoutDashboard },
+    { path: '/admin/products', label: t('admin.products'), icon: Package },
+    { path: '/admin/categories', label: t('admin.categories'), icon: FolderTree },
+    { path: '/admin/orders', label: t('admin.orders'), icon: FileText },
+    { path: '/admin/inventory', label: t('admin.inventory'), icon: Warehouse },
+    { path: '/admin/customers', label: t('admin.customers'), icon: UsersRound },
+    { path: '/admin/marketing', label: t('admin.marketing'), icon: Megaphone },
+    { path: '/admin/analytics', label: t('admin.analytics'), icon: BarChart3 },
+    { path: '/admin/shipping', label: t('admin.shipping'), icon: Truck },
+    { path: '/admin/activity-logs', label: t('admin.activityLogs'), icon: FileText },
+    ...(user?.isSuperAdmin ? [
+      { path: '/admin/users', label: t('admin.userManagement'), icon: Users },
+      { path: '/admin/platform', label: t('admin.platform'), icon: Shield },
+    ] : []),
   ]
 
   return (
@@ -42,6 +63,15 @@ export default function AdminLayout() {
                 )
               })}
             </nav>
+            <div className="mt-8 pt-8 border-t border-gray-200">
+              <button
+                onClick={handleLogout}
+                className="flex items-center gap-3 px-4 py-3 w-full rounded-lg text-red-600 hover:bg-red-50 transition-colors"
+              >
+                <LogOut className="w-5 h-5" />
+                <span>{t('admin.disconnect')}</span>
+              </button>
+            </div>
           </div>
         </aside>
 

@@ -1,11 +1,12 @@
 import { useParams, Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
-import { productsApi, cartApi, wishlistApi, reviewsApi } from '../lib/api'
-import { ShoppingCart, Heart, Star, ArrowLeft, Package, Truck } from 'lucide-react'
+import { productsApi, cartApi, wishlistApi, reviewsApi, qrCodeApi } from '../lib/api'
+import { ShoppingCart, Heart, Star, ArrowLeft, Package, Truck, QrCode } from 'lucide-react'
 import { useAuthStore } from '../store/authStore'
 import toast from 'react-hot-toast'
 import { useQueryClient } from '@tanstack/react-query'
+import { useCurrency } from '../utils/currency'
 
 export default function ProductDetail() {
   const { id } = useParams()
@@ -115,9 +116,9 @@ export default function ProductDetail() {
 
           <div className="flex items-center gap-4 mb-6">
             <div>
-              <span className="text-3xl font-bold text-gray-900">${price.toFixed(2)}</span>
+              <span className="text-3xl font-bold text-gray-900">{formatCurrency(price)}</span>
               {originalPrice && (
-                <span className="text-lg text-gray-500 line-through ml-2">${originalPrice.toFixed(2)}</span>
+                <span className="text-lg text-gray-500 line-through ml-2">{formatCurrency(originalPrice)}</span>
               )}
             </div>
             {product.averageRating && (
@@ -135,6 +136,40 @@ export default function ProductDetail() {
                 <span className="ml-2 text-gray-600">
                   {product.averageRating.toFixed(1)} ({product.reviewCount} reviews)
                 </span>
+              </div>
+            )}
+          </div>
+
+          {/* QR Code */}
+          <div className="mb-6 p-4 bg-gray-50 rounded-lg">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-semibold text-gray-900 mb-1">Share Product</h3>
+                <p className="text-sm text-gray-600">Scan QR code to view on mobile</p>
+              </div>
+              <button
+                onClick={async () => {
+                  try {
+                    const response = await qrCodeApi.getProductQRCode(product.id, 200)
+                    const url = URL.createObjectURL(response.data)
+                    setQrCodeUrl(url)
+                    setShowQRCode(true)
+                  } catch (error) {
+                    toast.error('Failed to generate QR code')
+                  }
+                }}
+                className="p-2 bg-white rounded-lg border border-gray-300 hover:bg-gray-50"
+                title="Generate QR Code"
+              >
+                <QrCode className="w-6 h-6 text-gray-600" />
+              </button>
+            </div>
+            {showQRCode && qrCodeUrl && (
+              <div className="mt-4 flex justify-center">
+                <div className="p-4 bg-white rounded-lg">
+                  <img src={qrCodeUrl} alt="QR Code" className="w-48 h-48" />
+                  <p className="text-xs text-center text-gray-600 mt-2">Scan to view product</p>
+                </div>
               </div>
             )}
           </div>

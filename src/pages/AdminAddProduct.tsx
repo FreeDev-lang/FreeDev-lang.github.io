@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { useNavigate } from 'react-router-dom'
-import { productsApi } from '../lib/api'
+import { productsApi, categoriesApi } from '../lib/api'
 import { ArrowLeft, Upload, X } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import toast from 'react-hot-toast'
+import { useQuery } from '@tanstack/react-query'
 
 export default function AdminAddProduct() {
   const navigate = useNavigate()
@@ -12,6 +13,12 @@ export default function AdminAddProduct() {
   const [modelFile, setModelFile] = useState<File | null>(null)
   const [imageFiles, setImageFiles] = useState<File[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [activeTab, setActiveTab] = useState<'basic' | 'details' | 'ecommerce' | 'ar' | 'files'>('basic')
+
+  const { data: categories } = useQuery({
+    queryKey: ['product-categories'],
+    queryFn: () => categoriesApi.getAll().then(res => res.data),
+  })
 
   const onSubmit = async (data: any) => {
     if (!modelFile) {
@@ -88,8 +95,16 @@ export default function AdminAddProduct() {
     setImageFiles(prev => prev.filter((_, i) => i !== index))
   }
 
+  const tabs = [
+    { id: 'basic', label: 'Basic Info' },
+    { id: 'details', label: 'Product Details' },
+    { id: 'ecommerce', label: 'E-commerce' },
+    { id: 'ar', label: 'AR Settings' },
+    { id: 'files', label: 'Files' },
+  ]
+
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="mb-6">
         <Link
           to="/admin/products"
@@ -103,337 +118,397 @@ export default function AdminAddProduct() {
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-6">
-          {/* Basic Information */}
-          <div>
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Basic Information</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Category <span className="text-red-500">*</span>
-                </label>
-                <select
-                  {...register('category', { required: 'Category is required' })}
-                  className="input"
+        {/* Tabs */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+          <div className="border-b border-gray-200">
+            <nav className="flex -mb-px">
+              {tabs.map((tab) => (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => setActiveTab(tab.id as any)}
+                  className={`px-6 py-4 text-sm font-medium border-b-2 transition-colors ${
+                    activeTab === tab.id
+                      ? 'border-primary-500 text-primary-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}
                 >
-                  <option value="">Select category</option>
-                  <option value="Sofa">Sofa</option>
-                  <option value="Chair">Chair</option>
-                  <option value="Table">Table</option>
-                  <option value="Bed">Bed</option>
-                  <option value="Cabinet">Cabinet</option>
-                  <option value="Shelf">Shelf</option>
-                  <option value="Lamp">Lamp</option>
-                  <option value="Other">Other</option>
-                </select>
-                {errors.category && (
-                  <p className="text-red-500 text-sm mt-1">{errors.category.message as string}</p>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Model Name <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  {...register('model', { required: 'Model name is required' })}
-                  className="input"
-                  placeholder="e.g., Modern Sofa"
-                />
-                {errors.model && (
-                  <p className="text-red-500 text-sm mt-1">{errors.model.message as string}</p>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Color</label>
-                <input
-                  type="text"
-                  {...register('color')}
-                  className="input"
-                  placeholder="e.g., Black, White"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Price <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="number"
-                  step="0.01"
-                  {...register('price', { required: 'Price is required', min: 0 })}
-                  className="input"
-                  placeholder="0.00"
-                />
-                {errors.price && (
-                  <p className="text-red-500 text-sm mt-1">{errors.price.message as string}</p>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Discount Price</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  {...register('discountPrice', { min: 0 })}
-                  className="input"
-                  placeholder="0.00"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">SKU</label>
-                <input
-                  type="text"
-                  {...register('sku')}
-                  className="input"
-                  placeholder="e.g., SOFA-001"
-                />
-              </div>
-            </div>
+                  {tab.label}
+                </button>
+              ))}
+            </nav>
           </div>
 
-          {/* Dimensions */}
-          <div>
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Dimensions (cm)</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Width</label>
-                <input
-                  type="number"
-                  {...register('width', { min: 0 })}
-                  className="input"
-                  placeholder="Width"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Height</label>
-                <input
-                  type="number"
-                  {...register('height', { min: 0 })}
-                  className="input"
-                  placeholder="Height"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Depth</label>
-                <input
-                  type="number"
-                  {...register('depth', { min: 0 })}
-                  className="input"
-                  placeholder="Depth"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* E-commerce Settings */}
-          <div>
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">E-commerce Settings</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Stock Quantity</label>
-                <input
-                  type="number"
-                  {...register('stockQuantity', { min: 0 })}
-                  className="input"
-                  defaultValue={0}
-                />
-              </div>
-
-              <div className="flex items-center space-x-4">
-                <label className="flex items-center">
-                  <input
-                    type="checkbox"
-                    {...register('isActive')}
-                    defaultChecked
-                    className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
-                  />
-                  <span className="ml-2 text-sm text-gray-700">Active</span>
-                </label>
-                <label className="flex items-center">
-                  <input
-                    type="checkbox"
-                    {...register('isFeatured')}
-                    className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
-                  />
-                  <span className="ml-2 text-sm text-gray-700">Featured</span>
-                </label>
-              </div>
-            </div>
-          </div>
-
-          {/* AR Settings */}
-          <div>
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">AR Settings</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Model Scale</label>
-                <input
-                  type="number"
-                  step="0.1"
-                  {...register('modelScale', { min: 0.1 })}
-                  className="input"
-                  placeholder="1.0"
-                />
-                <p className="text-xs text-gray-500 mt-1">Scale factor for AR rendering (default: 1.0)</p>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Model Units</label>
-                <select {...register('modelUnits')} className="input" defaultValue="cm">
-                  <option value="cm">Centimeters (cm)</option>
-                  <option value="m">Meters (m)</option>
-                  <option value="inches">Inches</option>
-                </select>
-              </div>
-            </div>
-          </div>
-
-          {/* Description */}
-          <div>
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Product Details</h2>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
-                <textarea
-                  {...register('description')}
-                  rows={4}
-                  className="input"
-                  placeholder="Product description..."
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Good to Know</label>
-                <textarea
-                  {...register('goodToKnow')}
-                  rows={3}
-                  className="input"
-                  placeholder="Additional information..."
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Guarantee</label>
-                <textarea
-                  {...register('guarantee')}
-                  rows={2}
-                  className="input"
-                  placeholder="Warranty information..."
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Product Details</label>
-                <textarea
-                  {...register('productDetail')}
-                  rows={3}
-                  className="input"
-                  placeholder="Detailed product information..."
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Files */}
-          <div>
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Files</h2>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  3D Model File (GLB) <span className="text-red-500">*</span>
-                </label>
-                <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg hover:border-primary-500 transition-colors">
-                  <div className="space-y-1 text-center">
-                    <Upload className="mx-auto h-12 w-12 text-gray-400" />
-                    <div className="flex text-sm text-gray-600">
-                      <label className="relative cursor-pointer rounded-md font-medium text-primary-600 hover:text-primary-500">
-                        <span>Upload a file</span>
-                        <input
-                          type="file"
-                          accept=".glb,.gltf"
-                          onChange={handleModelFileChange}
-                          className="sr-only"
-                        />
-                      </label>
-                      <p className="pl-1">or drag and drop</p>
-                    </div>
-                    <p className="text-xs text-gray-500">GLB or GLTF files only</p>
-                    {modelFile && (
-                      <p className="text-sm text-green-600 mt-2">{modelFile.name}</p>
+          <div className="p-6">
+            {/* Basic Information Tab */}
+            {activeTab === 'basic' && (
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Category <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      {...register('category', { required: 'Category is required' })}
+                      className="input"
+                    >
+                      <option value="">Select category</option>
+                      {categories && categories.map((cat: any) => (
+                        <option key={cat.id} value={cat.name}>{cat.displayName || cat.name}</option>
+                      ))}
+                    </select>
+                    {errors.category && (
+                      <p className="text-red-500 text-sm mt-1">{errors.category.message as string}</p>
                     )}
                   </div>
-                </div>
-                {!modelFile && (
-                  <p className="text-red-500 text-sm mt-1">3D model file is required</p>
-                )}
-              </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Product Images
-                </label>
-                <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg hover:border-primary-500 transition-colors">
-                  <div className="space-y-1 text-center">
-                    <Upload className="mx-auto h-12 w-12 text-gray-400" />
-                    <div className="flex text-sm text-gray-600">
-                      <label className="relative cursor-pointer rounded-md font-medium text-primary-600 hover:text-primary-500">
-                        <span>Upload images</span>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          multiple
-                          onChange={handleImageFilesChange}
-                          className="sr-only"
-                        />
-                      </label>
-                      <p className="pl-1">or drag and drop</p>
-                    </div>
-                    <p className="text-xs text-gray-500">PNG, JPG, GIF up to 10MB</p>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Model Name <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      {...register('model', { required: 'Model name is required' })}
+                      className="input"
+                      placeholder="e.g., Modern Sofa"
+                    />
+                    {errors.model && (
+                      <p className="text-red-500 text-sm mt-1">{errors.model.message as string}</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Color</label>
+                    <input
+                      type="text"
+                      {...register('color')}
+                      className="input"
+                      placeholder="e.g., Black, White"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Price <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      {...register('price', { required: 'Price is required', min: 0 })}
+                      className="input"
+                      placeholder="0.00"
+                    />
+                    {errors.price && (
+                      <p className="text-red-500 text-sm mt-1">{errors.price.message as string}</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Discount Price</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      {...register('discountPrice', { min: 0 })}
+                      className="input"
+                      placeholder="0.00"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">SKU</label>
+                    <input
+                      type="text"
+                      {...register('sku')}
+                      className="input"
+                      placeholder="e.g., SOFA-001"
+                    />
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Source URL</label>
+                    <input
+                      type="url"
+                      {...register('source')}
+                      className="input"
+                      placeholder="https://example.com/product"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Link to original product page (optional)</p>
                   </div>
                 </div>
-                {imageFiles.length > 0 && (
-                  <div className="mt-4 grid grid-cols-4 gap-4">
-                    {imageFiles.map((file, index) => (
-                      <div key={index} className="relative">
-                        <img
-                          src={URL.createObjectURL(file)}
-                          alt={`Preview ${index + 1}`}
-                          className="w-full h-24 object-cover rounded-lg"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => removeImage(index)}
-                          className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
-                        >
-                          <X className="w-3 h-3" />
-                        </button>
-                      </div>
-                    ))}
+
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Dimensions (cm)</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Width</label>
+                      <input
+                        type="number"
+                        {...register('width', { min: 0 })}
+                        className="input"
+                        placeholder="Width"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Height</label>
+                      <input
+                        type="number"
+                        {...register('height', { min: 0 })}
+                        className="input"
+                        placeholder="Height"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Depth</label>
+                      <input
+                        type="number"
+                        {...register('depth', { min: 0 })}
+                        className="input"
+                        placeholder="Depth"
+                      />
+                    </div>
                   </div>
-                )}
+                </div>
               </div>
-            </div>
+            )}
+
+            {/* Product Details Tab */}
+            {activeTab === 'details' && (
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                  <textarea
+                    {...register('description')}
+                    rows={6}
+                    className="input"
+                    placeholder="Product description..."
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Good to Know</label>
+                  <textarea
+                    {...register('goodToKnow')}
+                    rows={4}
+                    className="input"
+                    placeholder="Additional information, care instructions, etc..."
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Guarantee/Warranty</label>
+                  <textarea
+                    {...register('guarantee')}
+                    rows={3}
+                    className="input"
+                    placeholder="Warranty information..."
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Product Details</label>
+                  <textarea
+                    {...register('productDetail')}
+                    rows={4}
+                    className="input"
+                    placeholder="Detailed product specifications, materials, etc..."
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* E-commerce Tab */}
+            {activeTab === 'ecommerce' && (
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Stock Quantity</label>
+                    <input
+                      type="number"
+                      {...register('stockQuantity', { min: 0 })}
+                      className="input"
+                      defaultValue={0}
+                    />
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap gap-6">
+                  <label className="flex items-center">
+                    <input
+                      type="checkbox"
+                      {...register('isActive')}
+                      defaultChecked
+                      className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
+                    />
+                    <span className="ml-2 text-sm text-gray-700">Active (visible to customers)</span>
+                  </label>
+                  <label className="flex items-center">
+                    <input
+                      type="checkbox"
+                      {...register('isFeatured')}
+                      className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
+                    />
+                    <span className="ml-2 text-sm text-gray-700">Featured Product</span>
+                  </label>
+                </div>
+              </div>
+            )}
+
+            {/* AR Settings Tab */}
+            {activeTab === 'ar' && (
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Model Scale</label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      {...register('modelScale', { min: 0.1 })}
+                      className="input"
+                      placeholder="1.0"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Scale factor for AR rendering (default: 1.0)</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Model Units</label>
+                    <select {...register('modelUnits')} className="input" defaultValue="cm">
+                      <option value="cm">Centimeters (cm)</option>
+                      <option value="m">Meters (m)</option>
+                      <option value="inches">Inches</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <p className="text-sm text-blue-800">
+                    <strong>Note:</strong> The 3D model file will be uploaded in the Files tab. 
+                    Make sure the model scale matches your dimensions for accurate AR visualization.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Files Tab */}
+            {activeTab === 'files' && (
+              <div className="space-y-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    3D Model File (GLB) <span className="text-red-500">*</span>
+                  </label>
+                  <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg hover:border-primary-500 transition-colors">
+                    <div className="space-y-1 text-center">
+                      <Upload className="mx-auto h-12 w-12 text-gray-400" />
+                      <div className="flex text-sm text-gray-600">
+                        <label className="relative cursor-pointer rounded-md font-medium text-primary-600 hover:text-primary-500">
+                          <span>Upload a file</span>
+                          <input
+                            type="file"
+                            accept=".glb,.gltf"
+                            onChange={handleModelFileChange}
+                            className="sr-only"
+                          />
+                        </label>
+                        <p className="pl-1">or drag and drop</p>
+                      </div>
+                      <p className="text-xs text-gray-500">GLB or GLTF files only</p>
+                      {modelFile && (
+                        <p className="text-sm text-green-600 mt-2">{modelFile.name}</p>
+                      )}
+                    </div>
+                  </div>
+                  {!modelFile && (
+                    <p className="text-red-500 text-sm mt-1">3D model file is required</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Product Images
+                  </label>
+                  <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg hover:border-primary-500 transition-colors">
+                    <div className="space-y-1 text-center">
+                      <Upload className="mx-auto h-12 w-12 text-gray-400" />
+                      <div className="flex text-sm text-gray-600">
+                        <label className="relative cursor-pointer rounded-md font-medium text-primary-600 hover:text-primary-500">
+                          <span>Upload images</span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            multiple
+                            onChange={handleImageFilesChange}
+                            className="sr-only"
+                          />
+                        </label>
+                        <p className="pl-1">or drag and drop</p>
+                      </div>
+                      <p className="text-xs text-gray-500">PNG, JPG, GIF up to 10MB</p>
+                    </div>
+                  </div>
+                  {imageFiles.length > 0 && (
+                    <div className="mt-4 grid grid-cols-4 gap-4">
+                      {imageFiles.map((file, index) => (
+                        <div key={index} className="relative">
+                          <img
+                            src={URL.createObjectURL(file)}
+                            alt={`Preview ${index + 1}`}
+                            className="w-full h-24 object-cover rounded-lg"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => removeImage(index)}
+                            className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
         {/* Actions */}
-        <div className="flex items-center justify-end space-x-4">
-          <Link
-            to="/admin/products"
-            className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
-          >
-            Cancel
-          </Link>
-          <button
-            type="submit"
-            disabled={isSubmitting || !modelFile}
-            className="btn btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isSubmitting ? 'Creating...' : 'Create Product'}
-          </button>
+        <div className="flex items-center justify-between">
+          <div className="flex gap-2">
+            {tabs.map((tab, index) => (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => {
+                  const tabIds = tabs.map(t => t.id)
+                  const currentIndex = tabIds.indexOf(activeTab)
+                  if (index < currentIndex) {
+                    setActiveTab(tab.id as any)
+                  } else if (index > currentIndex) {
+                    // Could add validation here before allowing next tab
+                    setActiveTab(tab.id as any)
+                  }
+                }}
+                className={`px-3 py-1 text-xs rounded ${
+                  activeTab === tab.id
+                    ? 'bg-primary-100 text-primary-700'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+          <div className="flex items-center gap-4">
+            <Link
+              to="/admin/products"
+              className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+            >
+              Cancel
+            </Link>
+            <button
+              type="submit"
+              disabled={isSubmitting || !modelFile}
+              className="btn btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isSubmitting ? 'Creating...' : 'Create Product'}
+            </button>
+          </div>
         </div>
       </form>
     </div>
   )
 }
-

@@ -1,13 +1,18 @@
 import { Link, useNavigate } from 'react-router-dom'
-import { ShoppingCart, Heart, User, Menu, X, Search } from 'lucide-react'
+import { ShoppingCart, Heart, User, Menu, X, Search, Globe } from 'lucide-react'
 import { useState } from 'react'
 import { useAuthStore } from '../store/authStore'
 import { useCartStore } from '../store/cartStore'
+import { useLanguageStore, getLanguageName, type Language } from '../store/languageStore'
+import { useTranslation } from '../utils/i18n'
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [isLangMenuOpen, setIsLangMenuOpen] = useState(false)
   const { user, logout, isAuthenticated } = useAuthStore()
   const { totalItems } = useCartStore()
+  const { language, setLanguage } = useLanguageStore()
+  const { t } = useTranslation()
   const navigate = useNavigate()
 
   const handleLogout = () => {
@@ -30,10 +35,10 @@ export default function Navbar() {
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-8">
             <Link to="/products" className="text-gray-700 hover:text-primary-600 transition-colors">
-              Products
+              {t('nav.products')}
             </Link>
             <Link to="/products?featured=true" className="text-gray-700 hover:text-primary-600 transition-colors">
-              Featured
+              {t('nav.featured')}
             </Link>
           </div>
 
@@ -43,7 +48,7 @@ export default function Navbar() {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
               <input
                 type="text"
-                placeholder="Search products..."
+                placeholder={t('nav.search')}
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
@@ -56,6 +61,46 @@ export default function Navbar() {
 
           {/* Right Side Icons */}
           <div className="flex items-center space-x-4">
+            {/* Language Selector */}
+            <div className="relative group">
+              <button 
+                className="flex items-center space-x-1 p-2 text-gray-700 hover:text-primary-600 transition-colors"
+                onClick={() => setIsLangMenuOpen(!isLangMenuOpen)}
+              >
+                <Globe className="w-5 h-5" />
+                <span className="hidden md:block text-sm">{getLanguageName(language)}</span>
+              </button>
+              <div className={`absolute right-0 mt-2 w-40 bg-white rounded-lg shadow-lg py-2 ${isLangMenuOpen ? 'block' : 'hidden'} group-hover:block`}>
+                <button
+                  onClick={() => {
+                    setLanguage('en')
+                    setIsLangMenuOpen(false)
+                  }}
+                  className={`block w-full text-left px-4 py-2 hover:bg-gray-100 ${language === 'en' ? 'bg-primary-50 text-primary-600 font-medium' : 'text-gray-700'}`}
+                >
+                  English
+                </button>
+                <button
+                  onClick={() => {
+                    setLanguage('fr')
+                    setIsLangMenuOpen(false)
+                  }}
+                  className={`block w-full text-left px-4 py-2 hover:bg-gray-100 ${language === 'fr' ? 'bg-primary-50 text-primary-600 font-medium' : 'text-gray-700'}`}
+                >
+                  Français
+                </button>
+                <button
+                  onClick={() => {
+                    setLanguage('ar')
+                    setIsLangMenuOpen(false)
+                  }}
+                  className={`block w-full text-left px-4 py-2 hover:bg-gray-100 ${language === 'ar' ? 'bg-primary-50 text-primary-600 font-medium' : 'text-gray-700'}`}
+                >
+                  العربية
+                </button>
+              </div>
+            </div>
+
             {isAuthenticated() && (
               <Link to="/wishlist" className="relative p-2 text-gray-700 hover:text-primary-600 transition-colors">
                 <Heart className="w-6 h-6" />
@@ -78,27 +123,27 @@ export default function Navbar() {
                 </button>
                 <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all">
                   <Link to="/profile" className="block px-4 py-2 text-gray-700 hover:bg-gray-100">
-                    Profile
+                    {t('nav.profile')}
                   </Link>
                   <Link to="/orders" className="block px-4 py-2 text-gray-700 hover:bg-gray-100">
-                    Orders
+                    {t('nav.orders')}
                   </Link>
                   {user.isAdmin && (
                     <Link to="/admin/dashboard" className="block px-4 py-2 text-primary-600 hover:bg-primary-50 font-medium">
-                      Admin Panel
+                      {t('nav.adminPanel')}
                     </Link>
                   )}
                   <button
                     onClick={handleLogout}
                     className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100"
                   >
-                    Logout
+                    {t('nav.logout')}
                   </button>
                 </div>
               </div>
             ) : (
               <Link to="/login" className="btn btn-primary">
-                Sign In
+                {t('nav.signIn')}
               </Link>
             )}
 
@@ -116,14 +161,14 @@ export default function Navbar() {
         {isMenuOpen && (
           <div className="md:hidden py-4 border-t">
             <Link to="/products" className="block px-4 py-2 text-gray-700 hover:bg-gray-100">
-              Products
+              {t('nav.products')}
             </Link>
             <Link to="/products?featured=true" className="block px-4 py-2 text-gray-700 hover:bg-gray-100">
-              Featured
+              {t('nav.featured')}
             </Link>
             {!user && (
               <Link to="/login" className="block px-4 py-2 text-gray-700 hover:bg-gray-100">
-                Sign In
+                {t('nav.signIn')}
               </Link>
             )}
           </div>
