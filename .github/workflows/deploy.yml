@@ -3,8 +3,7 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches:
-      - main
-      - master
+      - main  # or 'master' if that's your default branch
   workflow_dispatch:
 
 permissions:
@@ -28,14 +27,17 @@ jobs:
         with:
           node-version: '18'
           cache: 'npm'
+          cache-dependency-path: fria-frontend/package-lock.json
       
       - name: Install dependencies
+        working-directory: ./fria-frontend
         run: npm ci
       
       - name: Build
-        run: npm run build
+        working-directory: ./fria-frontend
         env:
-          VITE_BASE_PATH: ${{ github.repository == 'freedev-lang/freedev-lang.github.io' && '/' || format('/{0}/', github.event.repository.name) }}
+          VITE_BASE_PATH: ${{ github.event.repository.name && format('/{0}/', github.event.repository.name) || '/' }}
+        run: npm run build
       
       - name: Setup Pages
         uses: actions/configure-pages@v4
@@ -43,7 +45,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: './dist'
+          path: './fria-frontend/dist'
 
   deploy:
     environment:
@@ -55,4 +57,3 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
-
