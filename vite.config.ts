@@ -7,21 +7,10 @@ import { fileURLToPath } from 'node:url'
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
 // https://vitejs.dev/config/
-// For GitHub Pages: set base to '/your-repo-name/'
-// For custom domain or root deployment: set base to '/'
-// Check your GitHub Pages URL - if it's username.github.io/repo-name, use '/repo-name/'
-// If it's a custom domain at root, use '/'
-const getBasePath = () => {
-  // Check environment variable first
-  if (process.env.VITE_BASE_PATH) {
-    return process.env.VITE_BASE_PATH;
-  }
-  // Default to root for custom domains
-  return '/';
-};
-
+// For GitHub Pages root deployment (username.github.io): base = '/'
+// For GitHub Pages subdirectory (username.github.io/repo-name): base = '/repo-name/'
 export default defineConfig({
-  base: getBasePath(),
+  base: process.env.VITE_BASE_PATH || '/',
   plugins: [
     react(),
     {

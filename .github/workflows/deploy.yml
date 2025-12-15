@@ -36,7 +36,9 @@ jobs:
       - name: Build
         working-directory: ./fria-frontend
         env:
-          VITE_BASE_PATH: ${{ github.event.repository.name && format('/{0}/', github.event.repository.name) || '/' }}
+          # Set base path to '/' for root GitHub Pages (freedev-lang.github.io)
+          # If deploying to a subdirectory, change this to '/repo-name/'
+          VITE_BASE_PATH: '/'
         run: npm run build
       
       - name: Setup Pages
