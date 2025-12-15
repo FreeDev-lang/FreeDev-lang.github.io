@@ -24,7 +24,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '18'
-          # Remove cache option to avoid the error
       
       - name: Install dependencies
         working-directory: ./fria-frontend
@@ -32,6 +31,10 @@ jobs:
       
       - name: Build
         working-directory: ./fria-frontend
+        env:
+          # Set base path to '/' for root GitHub Pages (freedev-lang.github.io)
+          # If deploying to a subdirectory, change this to '/repo-name/'
+          VITE_BASE_PATH: '/'
         run: npm run build
       
       - name: Add .nojekyll file
@@ -42,5 +45,11 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./fria-frontend/dist
-          publish_branch: gh-pages
-          force_orphan: true
+          # Deploying to master branch since GitHub Pages source is configured to use master
+          # IMPORTANT: Make sure GitHub Pages is set to serve from master branch root
+          # Repository Settings > Pages > Source: Deploy from a branch > master > / (root)
+          publish_branch: master
+          # Don't use force_orphan to preserve other files in master branch
+          # The action will only update files in the dist folder
+          # Optional: Set CNAME if using custom domain
+          # cname: freedev-lang.github.io
