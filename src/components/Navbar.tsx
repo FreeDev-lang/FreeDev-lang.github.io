@@ -3,7 +3,7 @@ import { ShoppingCart, Heart, User, Menu, X, Search, Globe } from 'lucide-react'
 import { useState } from 'react'
 import { useAuthStore } from '../store/authStore'
 import { useCartStore } from '../store/cartStore'
-import { useLanguageStore, getLanguageName, type Language } from '../store/languageStore'
+import { useLanguageStore, getLanguageName } from '../store/languageStore'
 import { useTranslation } from '../utils/i18n'
 
 export default function Navbar() {

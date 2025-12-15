@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom'
 import { productsApi, qrCodeApi } from '../lib/api'
 import { Plus, Edit, Trash2, QrCode } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { useState } from 'react'
 import { useCurrency } from '../utils/currency'
 
 export default function AdminProducts() {

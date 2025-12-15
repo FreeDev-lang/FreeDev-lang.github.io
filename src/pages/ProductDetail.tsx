@@ -13,7 +13,10 @@ export default function ProductDetail() {
   const [selectedColor, setSelectedColor] = useState<any>(null)
   const [quantity, setQuantity] = useState(1)
   const [isWishlisted, setIsWishlisted] = useState(false)
+  const [showQRCode, setShowQRCode] = useState(false)
+  const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null)
   const { isAuthenticated } = useAuthStore()
+  const { formatCurrency } = useCurrency()
   const queryClient = useQueryClient()
 
   const { data: product, isLoading } = useQuery({
