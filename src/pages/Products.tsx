@@ -28,19 +28,18 @@ export default function Products() {
     queryKey: ['products-search', filters],
     queryFn: () => {
       // Clean up the filters - convert empty strings to null/undefined for optional numeric fields
-      const cleanFilters = {
+      const cleanFilters: any = {
         ...filters,
         searchTerm: filters.searchTerm || null,
         category: filters.category || null,
         minPrice: filters.minPrice ? parseFloat(filters.minPrice) : null,
         maxPrice: filters.maxPrice ? parseFloat(filters.maxPrice) : null,
       }
-      // Remove null/undefined values
+      // Remove null/undefined values for optional fields only
+      const keysToKeep = ['sortBy', 'sortOrder', 'page', 'pageSize']
       Object.keys(cleanFilters).forEach(key => {
-        if (cleanFilters[key] === null || cleanFilters[key] === undefined || cleanFilters[key] === '') {
-          if (key !== 'sortBy' && key !== 'sortOrder' && key !== 'page' && key !== 'pageSize') {
-            delete cleanFilters[key]
-          }
+        if (!keysToKeep.includes(key) && (cleanFilters[key] === null || cleanFilters[key] === undefined || cleanFilters[key] === '')) {
+          delete cleanFilters[key]
         }
       })
       return productsApi.search(cleanFilters).then(res => res.data)
