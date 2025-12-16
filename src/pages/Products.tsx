@@ -37,9 +37,10 @@ export default function Products() {
       }
       // Remove null/undefined values for optional fields only
       const keysToKeep = ['sortBy', 'sortOrder', 'page', 'pageSize']
-      Object.keys(cleanFilters).forEach(key => {
-        if (!keysToKeep.includes(key) && (cleanFilters[key] === null || cleanFilters[key] === undefined || cleanFilters[key] === '')) {
-          delete cleanFilters[key]
+      Object.keys(cleanFilters).forEach((key: string) => {
+        const value = (cleanFilters as any)[key]
+        if (!keysToKeep.includes(key) && (value === null || value === undefined || value === '')) {
+          delete (cleanFilters as any)[key]
         }
       })
       return productsApi.search(cleanFilters).then(res => res.data)
