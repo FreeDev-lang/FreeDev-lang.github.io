@@ -26,7 +26,25 @@ export default function Products() {
 
   const { data: searchResults, isLoading } = useQuery({
     queryKey: ['products-search', filters],
-    queryFn: () => productsApi.search(filters).then(res => res.data),
+    queryFn: () => {
+      // Clean up the filters - convert empty strings to null/undefined for optional numeric fields
+      const cleanFilters = {
+        ...filters,
+        searchTerm: filters.searchTerm || null,
+        category: filters.category || null,
+        minPrice: filters.minPrice ? parseFloat(filters.minPrice) : null,
+        maxPrice: filters.maxPrice ? parseFloat(filters.maxPrice) : null,
+      }
+      // Remove null/undefined values
+      Object.keys(cleanFilters).forEach(key => {
+        if (cleanFilters[key] === null || cleanFilters[key] === undefined || cleanFilters[key] === '') {
+          if (key !== 'sortBy' && key !== 'sortOrder' && key !== 'page' && key !== 'pageSize') {
+            delete cleanFilters[key]
+          }
+        }
+      })
+      return productsApi.search(cleanFilters).then(res => res.data)
+    },
   })
 
   const handleFilterChange = (key: string, value: any) => {

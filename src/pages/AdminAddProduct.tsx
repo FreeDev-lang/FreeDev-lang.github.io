@@ -67,11 +67,14 @@ export default function AdminAddProduct() {
     try {
       const formData = new FormData()
       
-      // Add all form fields
+      // Send all fields - form is pre-populated when editing, so all fields have values
+      // This allows user to change just one field (like stock) and submit successfully
       formData.append('Category', data.category)
       formData.append('Model', data.model)
+      formData.append('Price', data.price?.toString() || '0')
+      
+      // Optional fields
       if (data.color) formData.append('Color', data.color)
-      formData.append('Price', data.price)
       if (data.source) formData.append('Source', data.source)
       
       // Sizes
@@ -89,8 +92,8 @@ export default function AdminAddProduct() {
       if (data.guarantee) formData.append('Guarantee', data.guarantee)
       if (data.productDetail) formData.append('ProductDetail', data.productDetail)
       
-      // E-commerce fields
-      formData.append('StockQuantity', data.stockQuantity || '0')
+      // E-commerce fields - always send these
+      formData.append('StockQuantity', (data.stockQuantity !== undefined && data.stockQuantity !== null && data.stockQuantity !== '') ? data.stockQuantity.toString() : '0')
       formData.append('IsActive', data.isActive ? 'true' : 'false')
       formData.append('IsFeatured', data.isFeatured ? 'true' : 'false')
       if (data.discountPrice) formData.append('DiscountPrice', data.discountPrice)
@@ -98,16 +101,16 @@ export default function AdminAddProduct() {
       
       // AR fields
       if (data.modelScale) formData.append('ModelScale', data.modelScale)
-      if (data.modelUnits) formData.append('ModelUnits', data.modelUnits || 'cm')
+      formData.append('ModelUnits', data.modelUnits || 'cm')
       
-      // Files (only append if provided)
+      // Files - only append new files (model file is optional when editing)
       if (modelFile) {
         formData.append('modelFile', modelFile)
       }
       imageFiles.forEach((file) => {
         formData.append('imageFiles', file)
       })
-
+      
       if (isEditing && id) {
         await productsApi.update(Number(id), formData)
         toast.success('Product updated successfully!')
