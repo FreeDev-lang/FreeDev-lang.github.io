@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { productsApi, categoriesApi } from '../lib/api'
 import { ArrowLeft, Upload, X } from 'lucide-react'
 import { Link } from 'react-router-dom'
@@ -9,19 +9,56 @@ import { useQuery } from '@tanstack/react-query'
 
 export default function AdminAddProduct() {
   const navigate = useNavigate()
-  const { register, handleSubmit, formState: { errors } } = useForm()
+  const { id } = useParams()
+  const isEditing = !!id
+  const { register, handleSubmit, formState: { errors }, reset } = useForm()
   const [modelFile, setModelFile] = useState<File | null>(null)
   const [imageFiles, setImageFiles] = useState<File[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [activeTab, setActiveTab] = useState<'basic' | 'details' | 'ecommerce' | 'ar' | 'files'>('basic')
+  const [existingImages, setExistingImages] = useState<string[]>([])
 
   const { data: categories } = useQuery({
     queryKey: ['product-categories'],
     queryFn: () => categoriesApi.getAll().then(res => res.data),
   })
 
+  const { data: product, isLoading: isLoadingProduct } = useQuery({
+    queryKey: ['product', id],
+    queryFn: () => productsApi.getById(Number(id)).then(res => res.data),
+    enabled: isEditing && !!id,
+  })
+
+  // Load product data when editing
+  useEffect(() => {
+    if (product && isEditing) {
+      reset({
+        category: product.category,
+        model: product.model,
+        color: product.color || '',
+        price: product.price,
+        source: product.source || '',
+        width: product.sizes?.[0] || '',
+        height: product.sizes?.[1] || '',
+        depth: product.sizes?.[2] || '',
+        description: product.details?.description || '',
+        goodToKnow: product.details?.goodToKnow || '',
+        guarantee: product.details?.guarantee || '',
+        productDetail: product.details?.productDetail || '',
+        stockQuantity: product.stockQuantity || 0,
+        isActive: product.isActive,
+        isFeatured: product.isFeatured,
+        discountPrice: product.discountPrice || '',
+        sku: product.sku || '',
+        modelScale: product.modelScale || '',
+        modelUnits: product.modelUnits || 'cm',
+      })
+      setExistingImages(product.images || [])
+    }
+  }, [product, isEditing, reset])
+
   const onSubmit = async (data: any) => {
-    if (!modelFile) {
+    if (!isEditing && !modelFile) {
       toast.error('Please upload a 3D model file')
       return
     }
@@ -63,17 +100,24 @@ export default function AdminAddProduct() {
       if (data.modelScale) formData.append('ModelScale', data.modelScale)
       if (data.modelUnits) formData.append('ModelUnits', data.modelUnits || 'cm')
       
-      // Files
-      formData.append('modelFile', modelFile)
+      // Files (only append if provided)
+      if (modelFile) {
+        formData.append('modelFile', modelFile)
+      }
       imageFiles.forEach((file) => {
         formData.append('imageFiles', file)
       })
 
-      await productsApi.create(formData)
-      toast.success('Product created successfully!')
+      if (isEditing && id) {
+        await productsApi.update(Number(id), formData)
+        toast.success('Product updated successfully!')
+      } else {
+        await productsApi.create(formData)
+        toast.success('Product created successfully!')
+      }
       navigate('/admin/products')
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to create product')
+      toast.error(error.response?.data?.message || `Failed to ${isEditing ? 'update' : 'create'} product`)
     } finally {
       setIsSubmitting(false)
     }
@@ -103,6 +147,10 @@ export default function AdminAddProduct() {
     { id: 'files', label: 'Files' },
   ]
 
+  if (isEditing && isLoadingProduct) {
+    return <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">Loading product...</div>
+  }
+
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="mb-6">
@@ -113,8 +161,8 @@ export default function AdminAddProduct() {
           <ArrowLeft className="w-4 h-4 mr-2" />
           Back to Products
         </Link>
-        <h1 className="text-3xl font-bold text-gray-900">Add New Product</h1>
-        <p className="text-gray-600 mt-2">Create a new furniture item for your store</p>
+        <h1 className="text-3xl font-bold text-gray-900">{isEditing ? 'Edit Product' : 'Add New Product'}</h1>
+        <p className="text-gray-600 mt-2">{isEditing ? 'Update product information' : 'Create a new furniture item for your store'}</p>
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
@@ -388,8 +436,13 @@ export default function AdminAddProduct() {
               <div className="space-y-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    3D Model File (GLB) <span className="text-red-500">*</span>
+                    3D Model File (GLB) {!isEditing && <span className="text-red-500">*</span>}
                   </label>
+                  {isEditing && (
+                    <p className="text-sm text-gray-500 mb-2">
+                      {product?.rendablePath ? 'Current model file exists. Upload a new file to replace it.' : 'No model file currently uploaded.'}
+                    </p>
+                  )}
                   <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg hover:border-primary-500 transition-colors">
                     <div className="space-y-1 text-center">
                       <Upload className="mx-auto h-12 w-12 text-gray-400" />
@@ -411,7 +464,7 @@ export default function AdminAddProduct() {
                       )}
                     </div>
                   </div>
-                  {!modelFile && (
+                  {!isEditing && !modelFile && (
                     <p className="text-red-500 text-sm mt-1">3D model file is required</p>
                   )}
                 </div>
@@ -439,24 +492,47 @@ export default function AdminAddProduct() {
                       <p className="text-xs text-gray-500">PNG, JPG, GIF up to 10MB</p>
                     </div>
                   </div>
+                  {/* Existing images when editing */}
+                  {isEditing && existingImages.length > 0 && (
+                    <div className="mt-4">
+                      <p className="text-sm text-gray-600 mb-2">Current images:</p>
+                      <div className="grid grid-cols-4 gap-4">
+                        {existingImages.map((imageUrl, index) => (
+                          <div key={index} className="relative">
+                            <img
+                              src={imageUrl}
+                              alt={`Existing ${index + 1}`}
+                              className="w-full h-24 object-cover rounded-lg"
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {/* New images to upload */}
                   {imageFiles.length > 0 && (
-                    <div className="mt-4 grid grid-cols-4 gap-4">
-                      {imageFiles.map((file, index) => (
-                        <div key={index} className="relative">
-                          <img
-                            src={URL.createObjectURL(file)}
-                            alt={`Preview ${index + 1}`}
-                            className="w-full h-24 object-cover rounded-lg"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => removeImage(index)}
-                            className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
-                          >
-                            <X className="w-3 h-3" />
-                          </button>
-                        </div>
-                      ))}
+                    <div className="mt-4">
+                      {isEditing && existingImages.length > 0 && (
+                        <p className="text-sm text-gray-600 mb-2">New images to add:</p>
+                      )}
+                      <div className="grid grid-cols-4 gap-4">
+                        {imageFiles.map((file, index) => (
+                          <div key={index} className="relative">
+                            <img
+                              src={URL.createObjectURL(file)}
+                              alt={`Preview ${index + 1}`}
+                              className="w-full h-24 object-cover rounded-lg"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => removeImage(index)}
+                              className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   )}
                 </div>
