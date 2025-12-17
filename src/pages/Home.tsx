@@ -4,6 +4,7 @@ import { ArrowRight, Sparkles } from 'lucide-react'
 import { productsApi } from '../lib/api'
 import ProductCard from '../components/ProductCard'
 import { motion } from 'framer-motion'
+import { useTypewriter } from '../hooks/useTypewriter'
 
 export default function Home() {
   const { data: featured } = useQuery({
@@ -11,10 +12,67 @@ export default function Home() {
     queryFn: () => productsApi.getFeatured(8).then(res => res.data),
   })
 
+  const fullText = "Transform Your Space\nWith Fria"
+  const typedText = useTypewriter(fullText, 80)
+  
+  // Parse the typed text to render with gold "Fria"
+  const renderTypedText = () => {
+    if (!typedText.includes('\n')) {
+      // First line is still typing
+      return (
+        <>
+          <span className="text-black">{typedText}</span>
+          <span className="inline-block w-0.5 h-8 md:h-12 bg-black ml-1 animate-pulse"></span>
+        </>
+      )
+    }
+    
+    const lines = typedText.split('\n')
+    const firstLine = lines[0]
+    const secondLine = lines[1] || ''
+    
+    // Check if "With " has been typed
+    if (secondLine.startsWith('With ')) {
+      const afterWith = secondLine.substring(5) // Everything after "With "
+      const friaLength = Math.min(afterWith.length, 4) // "Fria" is 4 characters
+      const friaTyped = afterWith.substring(0, friaLength)
+      const afterFria = afterWith.substring(4)
+      
+      return (
+        <>
+          <span className="text-black">{firstLine}</span>
+          <br />
+          <span className="text-black">With </span>
+          <span className="text-gold-500" style={{ color: '#FFD700' }}>{friaTyped}</span>
+          {afterFria && <span className="text-black">{afterFria}</span>}
+          <span className="inline-block w-0.5 h-8 md:h-12 bg-black ml-1 animate-pulse"></span>
+        </>
+      )
+    } else {
+      // "With " hasn't been typed yet, but second line exists
+      return (
+        <>
+          <span className="text-black">{firstLine}</span>
+          <br />
+          <span className="text-black">{secondLine}</span>
+          <span className="inline-block w-0.5 h-8 md:h-12 bg-black ml-1 animate-pulse"></span>
+        </>
+      )
+    }
+  }
+
   return (
     <div>
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-br from-primary-600 via-primary-700 to-primary-800 text-white overflow-hidden">
+      <section 
+        className="relative text-black overflow-hidden"
+        style={{
+          backgroundImage: 'url(/hero-background.jpg)', // Replace with your image path
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
+        }}
+      >
         <div className="absolute inset-0 bg-grid-pattern opacity-10"></div>
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 md:py-32">
           <motion.div
@@ -24,15 +82,13 @@ export default function Home() {
             className="text-center"
           >
             <div className="flex items-center justify-center mb-6">
-              <Sparkles className="w-8 h-8 mr-2" />
-              <span className="text-primary-200 text-sm font-medium">AR-Enabled Shopping</span>
+              <Sparkles className="w-8 h-8 mr-2 text-black" />
+              <span className="text-black text-sm font-medium">AR-Enabled Shopping</span>
             </div>
-            <h1 className="text-5xl md:text-6xl font-bold mb-6">
-              Transform Your Space
-              <br />
-              <span className="text-primary-200">With Fria</span>
+            <h1 className="text-5xl md:text-6xl font-bold mb-6 min-h-[4rem] md:min-h-[5rem]">
+              {renderTypedText()}
             </h1>
-            <p className="text-xl text-primary-100 mb-8 max-w-2xl mx-auto">
+            <p className="text-xl text-black mb-8 max-w-2xl mx-auto">
               Discover modern furniture designed for your lifestyle. Visualize in AR before you buy.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -45,7 +101,7 @@ export default function Home() {
               </Link>
               <Link
                 to="/products?featured=true"
-                className="inline-flex items-center px-8 py-4 border-2 border-white text-white rounded-lg font-semibold hover:bg-white hover:text-primary-700 transition-all"
+                className="inline-flex items-center px-8 py-4 border-2 border-black text-black rounded-lg font-semibold hover:bg-black hover:text-white transition-all"
               >
                 Featured Collection
               </Link>

@@ -19,6 +19,11 @@ export default {
           800: '#075985',
           900: '#0c4a6e',
         },
+        gold: {
+          400: '#fbbf24',
+          500: '#f59e0b',
+          600: '#d97706',
+        },
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],
