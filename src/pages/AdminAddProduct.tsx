@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { useNavigate, useParams } from 'react-router-dom'
-import { productsApi, categoriesApi } from '../lib/api'
-import { ArrowLeft, Upload, X } from 'lucide-react'
+import { productsApi, categoriesApi, productColorsApi } from '../lib/api'
+import { ArrowLeft, Upload, X, Plus, Trash2 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import toast from 'react-hot-toast'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 
 export default function AdminAddProduct() {
   const navigate = useNavigate()
@@ -15,8 +15,10 @@ export default function AdminAddProduct() {
   const [modelFile, setModelFile] = useState<File | null>(null)
   const [imageFiles, setImageFiles] = useState<File[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [activeTab, setActiveTab] = useState<'basic' | 'details' | 'ecommerce' | 'ar' | 'files'>('basic')
+  const [activeTab, setActiveTab] = useState<'basic' | 'details' | 'ecommerce' | 'ar' | 'files' | 'colors'>('basic')
   const [existingImages, setExistingImages] = useState<string[]>([])
+  const [originalData, setOriginalData] = useState<any>(null)
+  const queryClient = useQueryClient()
 
   const { data: categories } = useQuery({
     queryKey: ['product-categories'],
@@ -29,10 +31,16 @@ export default function AdminAddProduct() {
     enabled: isEditing && !!id,
   })
 
+  const { data: productColors = [] } = useQuery({
+    queryKey: ['product-colors', id],
+    queryFn: () => productColorsApi.getByProduct(Number(id)).then(res => res.data),
+    enabled: isEditing && !!id,
+  })
+
   // Load product data when editing
   useEffect(() => {
     if (product && isEditing) {
-      reset({
+      const formData = {
         category: product.category,
         model: product.model,
         color: product.color || '',
@@ -52,7 +60,9 @@ export default function AdminAddProduct() {
         sku: product.sku || '',
         modelScale: product.modelScale || '',
         modelUnits: product.modelUnits || 'cm',
-      })
+      }
+      reset(formData)
+      setOriginalData(formData)
       setExistingImages(product.images || [])
     }
   }, [product, isEditing, reset])
@@ -67,41 +77,108 @@ export default function AdminAddProduct() {
     try {
       const formData = new FormData()
       
-      // Send all fields - form is pre-populated when editing, so all fields have values
-      // This allows user to change just one field (like stock) and submit successfully
-      formData.append('Category', data.category)
-      formData.append('Model', data.model)
-      formData.append('Price', data.price?.toString() || '0')
-      
-      // Optional fields
-      if (data.color) formData.append('Color', data.color)
-      if (data.source) formData.append('Source', data.source)
-      
-      // Sizes
-      const sizes = []
-      if (data.width) sizes.push(data.width)
-      if (data.height) sizes.push(data.height)
-      if (data.depth) sizes.push(data.depth)
-      if (sizes.length > 0) {
-        formData.append('Sizes', sizes.join(','))
+      if (isEditing && originalData) {
+        // Only send changed fields when editing
+        if (data.category !== originalData.category) formData.append('Category', data.category)
+        if (data.model !== originalData.model) formData.append('Model', data.model)
+        if (data.price !== originalData.price) formData.append('Price', data.price?.toString() || '0')
+        if (data.color !== originalData.color) {
+          if (data.color) formData.append('Color', data.color)
+          else formData.append('Color', '')
+        }
+        if (data.source !== originalData.source) {
+          if (data.source) formData.append('Source', data.source)
+          else formData.append('Source', '')
+        }
+        
+        // Sizes - check if any changed
+        const currentSizes = [data.width || '', data.height || '', data.depth || '']
+        const originalSizes = [originalData.width || '', originalData.height || '', originalData.depth || '']
+        if (JSON.stringify(currentSizes) !== JSON.stringify(originalSizes)) {
+          const sizes = []
+          if (data.width) sizes.push(data.width)
+          if (data.height) sizes.push(data.height)
+          if (data.depth) sizes.push(data.depth)
+          if (sizes.length > 0) {
+            formData.append('Sizes', sizes.join(','))
+          }
+        }
+        
+        // Details
+        if (data.description !== originalData.description) {
+          if (data.description) formData.append('Description', data.description)
+          else formData.append('Description', '')
+        }
+        if (data.goodToKnow !== originalData.goodToKnow) {
+          if (data.goodToKnow) formData.append('GoodToKnow', data.goodToKnow)
+          else formData.append('GoodToKnow', '')
+        }
+        if (data.guarantee !== originalData.guarantee) {
+          if (data.guarantee) formData.append('Guarantee', data.guarantee)
+          else formData.append('Guarantee', '')
+        }
+        if (data.productDetail !== originalData.productDetail) {
+          if (data.productDetail) formData.append('ProductDetail', data.productDetail)
+          else formData.append('ProductDetail', '')
+        }
+        
+        // E-commerce fields
+        if (data.stockQuantity !== originalData.stockQuantity) {
+          formData.append('StockQuantity', (data.stockQuantity !== undefined && data.stockQuantity !== null && data.stockQuantity !== '') ? data.stockQuantity.toString() : '0')
+        }
+        if (data.isActive !== originalData.isActive) {
+          formData.append('IsActive', data.isActive ? 'true' : 'false')
+        }
+        if (data.isFeatured !== originalData.isFeatured) {
+          formData.append('IsFeatured', data.isFeatured ? 'true' : 'false')
+        }
+        if (data.discountPrice !== originalData.discountPrice) {
+          if (data.discountPrice) formData.append('DiscountPrice', data.discountPrice)
+          else formData.append('DiscountPrice', '')
+        }
+        if (data.sku !== originalData.sku) {
+          if (data.sku) formData.append('SKU', data.sku)
+          else formData.append('SKU', '')
+        }
+        
+        // AR fields
+        if (data.modelScale !== originalData.modelScale) {
+          if (data.modelScale) formData.append('ModelScale', data.modelScale)
+          else formData.append('ModelScale', '')
+        }
+        if (data.modelUnits !== originalData.modelUnits) {
+          formData.append('ModelUnits', data.modelUnits || 'cm')
+        }
+      } else {
+        // Create mode - send all fields
+        formData.append('Category', data.category)
+        formData.append('Model', data.model)
+        formData.append('Price', data.price?.toString() || '0')
+        if (data.color) formData.append('Color', data.color)
+        if (data.source) formData.append('Source', data.source)
+        
+        const sizes = []
+        if (data.width) sizes.push(data.width)
+        if (data.height) sizes.push(data.height)
+        if (data.depth) sizes.push(data.depth)
+        if (sizes.length > 0) {
+          formData.append('Sizes', sizes.join(','))
+        }
+        
+        if (data.description) formData.append('Description', data.description)
+        if (data.goodToKnow) formData.append('GoodToKnow', data.goodToKnow)
+        if (data.guarantee) formData.append('Guarantee', data.guarantee)
+        if (data.productDetail) formData.append('ProductDetail', data.productDetail)
+        
+        formData.append('StockQuantity', (data.stockQuantity !== undefined && data.stockQuantity !== null && data.stockQuantity !== '') ? data.stockQuantity.toString() : '0')
+        formData.append('IsActive', data.isActive ? 'true' : 'false')
+        formData.append('IsFeatured', data.isFeatured ? 'true' : 'false')
+        if (data.discountPrice) formData.append('DiscountPrice', data.discountPrice)
+        if (data.sku) formData.append('SKU', data.sku)
+        
+        if (data.modelScale) formData.append('ModelScale', data.modelScale)
+        formData.append('ModelUnits', data.modelUnits || 'cm')
       }
-      
-      // Details
-      if (data.description) formData.append('Description', data.description)
-      if (data.goodToKnow) formData.append('GoodToKnow', data.goodToKnow)
-      if (data.guarantee) formData.append('Guarantee', data.guarantee)
-      if (data.productDetail) formData.append('ProductDetail', data.productDetail)
-      
-      // E-commerce fields - always send these
-      formData.append('StockQuantity', (data.stockQuantity !== undefined && data.stockQuantity !== null && data.stockQuantity !== '') ? data.stockQuantity.toString() : '0')
-      formData.append('IsActive', data.isActive ? 'true' : 'false')
-      formData.append('IsFeatured', data.isFeatured ? 'true' : 'false')
-      if (data.discountPrice) formData.append('DiscountPrice', data.discountPrice)
-      if (data.sku) formData.append('SKU', data.sku)
-      
-      // AR fields
-      if (data.modelScale) formData.append('ModelScale', data.modelScale)
-      formData.append('ModelUnits', data.modelUnits || 'cm')
       
       // Files - only append new files (model file is optional when editing)
       if (modelFile) {
@@ -148,7 +225,73 @@ export default function AdminAddProduct() {
     { id: 'ecommerce', label: 'E-commerce' },
     { id: 'ar', label: 'AR Settings' },
     { id: 'files', label: 'Files' },
+    { id: 'colors', label: 'Available Colors' },
   ]
+
+  // Color management
+  const [newColor, setNewColor] = useState({ colorName: '', hexCode: '#000000', isAvailable: true, displayOrder: 0 })
+  const [editingColor, setEditingColor] = useState<any>(null)
+
+  const createColorMutation = useMutation({
+    mutationFn: (data: any) => productColorsApi.create(Number(id), data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['product-colors', id] })
+      setNewColor({ colorName: '', hexCode: '#000000', isAvailable: true, displayOrder: 0 })
+      toast.success('Color added successfully')
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Failed to add color')
+    },
+  })
+
+  const updateColorMutation = useMutation({
+    mutationFn: ({ id: colorId, data }: { id: number, data: any }) => productColorsApi.update(colorId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['product-colors', id] })
+      setEditingColor(null)
+      toast.success('Color updated successfully')
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Failed to update color')
+    },
+  })
+
+  const deleteColorMutation = useMutation({
+    mutationFn: (colorId: number) => productColorsApi.delete(colorId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['product-colors', id] })
+      toast.success('Color deleted successfully')
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Failed to delete color')
+    },
+  })
+
+  const handleAddColor = () => {
+    if (!newColor.colorName.trim()) {
+      toast.error('Color name is required')
+      return
+    }
+    if (!isEditing || !id) {
+      toast.error('Please save the product first before adding colors')
+      return
+    }
+    createColorMutation.mutate(newColor)
+  }
+
+  const handleUpdateColor = () => {
+    if (!editingColor?.colorName?.trim()) {
+      toast.error('Color name is required')
+      return
+    }
+    updateColorMutation.mutate({ id: editingColor.id, data: editingColor })
+  }
+
+  const handleDeleteColor = (colorId: number) => {
+    if (window.confirm('Are you sure you want to delete this color?')) {
+      deleteColorMutation.mutate(colorId)
+    }
+  }
 
   if (isEditing && isLoadingProduct) {
     return <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">Loading product...</div>
@@ -541,6 +684,160 @@ export default function AdminAddProduct() {
                 </div>
               </div>
             )}
+
+            {/* Available Colors Tab */}
+            {activeTab === 'colors' && (
+              <div className="space-y-6">
+                {!isEditing ? (
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                    <p className="text-sm text-yellow-800">
+                      <strong>Note:</strong> Please save the product first, then you can add available colors.
+                    </p>
+                  </div>
+                ) : (
+                  <>
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900 mb-4">Add New Color</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-gray-50 rounded-lg">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Color Name</label>
+                          <input
+                            type="text"
+                            value={newColor.colorName}
+                            onChange={(e) => setNewColor({ ...newColor, colorName: e.target.value })}
+                            className="input"
+                            placeholder="e.g., Black, White"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Hex Code</label>
+                          <div className="flex gap-2">
+                            <input
+                              type="color"
+                              value={newColor.hexCode}
+                              onChange={(e) => setNewColor({ ...newColor, hexCode: e.target.value })}
+                              className="h-10 w-20 rounded border border-gray-300"
+                            />
+                            <input
+                              type="text"
+                              value={newColor.hexCode}
+                              onChange={(e) => setNewColor({ ...newColor, hexCode: e.target.value })}
+                              className="input flex-1"
+                              placeholder="#000000"
+                            />
+                          </div>
+                        </div>
+                        <div className="flex items-end">
+                          <button
+                            type="button"
+                            onClick={handleAddColor}
+                            disabled={createColorMutation.isPending}
+                            className="btn btn-primary w-full"
+                          >
+                            {createColorMutation.isPending ? 'Adding...' : <><Plus className="w-4 h-4 mr-2" />Add Color</>}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900 mb-4">Existing Colors</h3>
+                      {productColors.length === 0 ? (
+                        <p className="text-gray-500 text-center py-8">No colors added yet. Add your first color above.</p>
+                      ) : (
+                        <div className="space-y-3">
+                          {productColors.map((color: any) => (
+                            <div
+                              key={color.id}
+                              className="flex items-center gap-4 p-4 bg-white border border-gray-200 rounded-lg"
+                            >
+                              <div
+                                className="w-12 h-12 rounded-full border-2 border-gray-300"
+                                style={{ backgroundColor: color.hexCode || '#000000' }}
+                              />
+                              <div className="flex-1">
+                                <p className="font-medium text-gray-900">{color.colorName}</p>
+                                <p className="text-sm text-gray-500">{color.hexCode}</p>
+                              </div>
+                              <div className="flex gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => setEditingColor({ ...color })}
+                                  className="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50"
+                                >
+                                  Edit
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteColor(color.id)}
+                                  disabled={deleteColorMutation.isPending}
+                                  className="px-4 py-2 text-sm bg-red-500 text-white rounded-lg hover:bg-red-600 disabled:opacity-50"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {editingColor && (
+                      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                        <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+                          <h3 className="text-lg font-semibold mb-4">Edit Color</h3>
+                          <div className="space-y-4">
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-2">Color Name</label>
+                              <input
+                                type="text"
+                                value={editingColor.colorName}
+                                onChange={(e) => setEditingColor({ ...editingColor, colorName: e.target.value })}
+                                className="input"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-2">Hex Code</label>
+                              <div className="flex gap-2">
+                                <input
+                                  type="color"
+                                  value={editingColor.hexCode}
+                                  onChange={(e) => setEditingColor({ ...editingColor, hexCode: e.target.value })}
+                                  className="h-10 w-20 rounded border border-gray-300"
+                                />
+                                <input
+                                  type="text"
+                                  value={editingColor.hexCode}
+                                  onChange={(e) => setEditingColor({ ...editingColor, hexCode: e.target.value })}
+                                  className="input flex-1"
+                                />
+                              </div>
+                            </div>
+                            <div className="flex gap-2">
+                              <button
+                                type="button"
+                                onClick={() => setEditingColor(null)}
+                                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+                              >
+                                Cancel
+                              </button>
+                              <button
+                                type="button"
+                                onClick={handleUpdateColor}
+                                disabled={updateColorMutation.isPending}
+                                className="flex-1 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50"
+                              >
+                                {updateColorMutation.isPending ? 'Saving...' : 'Save'}
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
@@ -580,10 +877,10 @@ export default function AdminAddProduct() {
             </Link>
             <button
               type="submit"
-              disabled={isSubmitting || !modelFile}
+              disabled={isSubmitting || (!isEditing && !modelFile)}
               className="btn btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isSubmitting ? 'Creating...' : 'Create Product'}
+              {isSubmitting ? (isEditing ? 'Updating...' : 'Creating...') : (isEditing ? 'Update Product' : 'Create Product')}
             </button>
           </div>
         </div>

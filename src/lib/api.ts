@@ -70,6 +70,9 @@ export const productGroupsApi = {
 // Product Colors API
 export const productColorsApi = {
   getByProduct: (productId: number) => api.get(`/productcolors/product/${productId}`),
+  create: (productId: number, data: any) => api.post(`/productcolors/product/${productId}`, data),
+  update: (id: number, data: any) => api.put(`/productcolors/${id}`, data),
+  delete: (id: number) => api.delete(`/productcolors/${id}`),
 }
 
 // Cart API
