@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useMutation, useQuery } from '@tanstack/react-query'
-import { marketingApi, notificationsApi } from '../lib/api'
-import { Send, Bell, Users, Star, Image as ImageIcon } from 'lucide-react'
+import { marketingApi } from '../lib/api'
+import { Send, Bell, Star, Image as ImageIcon } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 export default function AdminNotifications() {
