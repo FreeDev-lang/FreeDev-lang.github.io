@@ -22,8 +22,46 @@ export default function Login() {
   }
 
   const handleSocialLogin = async (provider: string) => {
-    // In a real app, you'd integrate with OAuth providers
-    toast(`${provider} login integration coming soon`)
+    try {
+      // In production, you would:
+      // 1. Open OAuth popup
+      // 2. Get user info from OAuth provider
+      // 3. Send to backend
+      
+      // For now, we'll use a simplified flow where user manually enters info
+      // In production, replace this with actual OAuth flow
+      
+      // Mock OAuth flow - in production use actual OAuth libraries
+      // Note: This is a placeholder for actual OAuth implementation
+      // const mockUserInfo = {
+      //   provider,
+      //   providerId: `mock_${provider.toLowerCase()}_${Date.now()}`,
+      //   email: `user@${provider.toLowerCase()}.com`,
+      //   firstName: 'John',
+      //   lastName: 'Doe',
+      //   profilePictureUrl: null
+      // }
+      
+      // For demo purposes, we'll prompt for email
+      const email = prompt(`Enter your ${provider} email:`)
+      if (!email) return
+      
+      const socialData = {
+        provider,
+        providerId: `social_${provider.toLowerCase()}_${Date.now()}`,
+        email,
+        firstName: prompt('Enter your first name:') || 'User',
+        lastName: prompt('Enter your last name:') || '',
+        profilePictureUrl: null
+      }
+      
+      const response = await authApi.socialLogin(socialData)
+      setAuth(response.data.user, response.data.token)
+      toast.success(`Signed in with ${provider}`)
+      navigate('/')
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || `Failed to sign in with ${provider}`)
+    }
   }
 
   const handleGuestLogin = async () => {

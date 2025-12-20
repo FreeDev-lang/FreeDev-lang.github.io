@@ -38,6 +38,7 @@ export const authApi = {
   register: (data: any) => api.post('/auth/register', data),
   login: (data: any) => api.post('/auth/login', data),
   socialLogin: (data: any) => api.post('/auth/social-login', data),
+  verifySocialLogin: (data: any) => api.post('/auth/social-login/verify', data),
   createGuest: () => api.post('/auth/guest'),
   getMe: () => api.get('/auth/me'),
   updateMe: (data: any) => api.put('/auth/me', data),
@@ -155,11 +156,22 @@ export const marketingApi = {
   getActiveBanners: () => api.get('/marketing/banners'),
   getAllBanners: () => api.get('/marketing/banners/all'),
   getBanner: (id: number) => api.get(`/marketing/banners/${id}`),
-  createBanner: (data: any) => api.post('/marketing/banners', data),
-  updateBanner: (id: number, data: any) => api.put(`/marketing/banners/${id}`, data),
+  createBanner: (formData: FormData) => api.post('/marketing/banners', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  }),
+  updateBanner: (id: number, formData: FormData) => api.put(`/marketing/banners/${id}`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  }),
   deleteBanner: (id: number) => api.delete(`/marketing/banners/${id}`),
   getFeaturedProducts: () => api.get('/marketing/featured-products'),
   setFeaturedProducts: (data: any) => api.post('/marketing/featured-products', data),
+  sendFeaturedProductNotification: () => api.post('/marketing/featured-products/notify'),
+  notifyBanner: (id: number) => api.post(`/marketing/banners/${id}/notify`),
+  sendNotification: (data: any) => api.post('/marketing/notifications/send', data),
+  shareToFacebook: (data: any) => api.post('/marketing/social/share-facebook', data),
+  shareToInstagram: (data: any) => api.post('/marketing/social/share-instagram', data),
+  schedulePost: (data: any) => api.post('/marketing/social/schedule-post', data),
+  getScheduledPosts: () => api.get('/marketing/social/scheduled-posts'),
 }
 
 // Analytics API
@@ -170,6 +182,10 @@ export const analyticsApi = {
   getTopBrands: (params?: any) => api.get('/analytics/top-brands', { params }),
   getCouponUsage: (params?: any) => api.get('/analytics/coupon-usage', { params }),
   getCustomerAnalytics: (params?: any) => api.get('/analytics/customers', { params }),
+  getSalesReportPdf: (fromDate: string, toDate: string) => api.get('/analytics/sales/pdf', { params: { fromDate, toDate }, responseType: 'blob' }),
+  getDashboardReportPdf: (params?: any) => api.get('/analytics/dashboard/pdf', { params, responseType: 'blob' }),
+  getCustomerAnalyticsPdf: (params?: any) => api.get('/analytics/customers/pdf', { params, responseType: 'blob' }),
+  getCouponUsageReportPdf: (params?: any) => api.get('/analytics/coupon-usage/pdf', { params, responseType: 'blob' }),
 }
 
 // Activity Logs API
@@ -182,6 +198,8 @@ export const platformApi = {
   shutdown: () => api.post('/platform/shutdown'),
   restart: () => api.post('/platform/restart'),
   getStatus: () => api.get('/platform/status'),
+  getSettings: () => api.get('/platform/settings'),
+  updateCurrency: (currencyCode: string) => api.put('/platform/settings/currency', { currencyCode }),
 }
 
 // Shipping Methods API
@@ -223,5 +241,13 @@ export const qrCodeApi = {
 // Setup API (for creating first admin)
 export const setupApi = {
   createAdmin: (data: any) => api.post('/setup/create-admin', data),
+}
+
+// Notifications API
+export const notificationsApi = {
+  registerDeviceToken: (data: any) => api.post('/notifications/register', data),
+  sendNotification: (data: any) => api.post('/notifications/send', data),
+  sendToUser: (userId: number, data: any) => api.post(`/notifications/send-to-user/${userId}`, data),
+  sendToAll: (data: any) => api.post('/notifications/send-to-all', data),
 }
 

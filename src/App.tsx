@@ -1,7 +1,9 @@
 import { Routes, Route } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
-import { useLanguageStore } from './store/languageStore'
+import { useLanguageStore, setPlatformCurrency } from './store/languageStore'
 import { useEffect } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { platformApi } from './lib/api'
 import Layout from './components/Layout'
 import Home from './pages/Home'
 import Products from './pages/Products'
@@ -27,12 +29,33 @@ import AdminActivityLogs from './pages/AdminActivityLogs'
 import AdminShipping from './pages/AdminShipping'
 import AdminPlatform from './pages/AdminPlatform'
 import AdminCategories from './pages/AdminCategories'
+import AdminNotifications from './pages/AdminNotifications'
+import AdminSocialMedia from './pages/AdminSocialMedia'
 import SetupAdmin from './pages/SetupAdmin'
 import AdminRoute from './components/AdminRoute'
 import ProtectedRoute from './components/ProtectedRoute'
+import Chatbot from './components/Chatbot'
 
 function App() {
   const { language } = useLanguageStore()
+
+  // Load platform currency settings
+  const { data: platformSettings } = useQuery({
+    queryKey: ['platform-settings'],
+    queryFn: () => platformApi.getSettings().then(res => res.data),
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+  })
+
+  useEffect(() => {
+    // Update platform currency when settings are loaded
+    if (platformSettings) {
+      setPlatformCurrency({
+        code: platformSettings.currencyCode,
+        symbol: platformSettings.currencySymbol,
+        name: platformSettings.currencyName,
+      })
+    }
+  }, [platformSettings])
 
   useEffect(() => {
     // Set RTL for Arabic
@@ -71,6 +94,8 @@ function App() {
           <Route path="inventory" element={<AdminInventory />} />
           <Route path="customers" element={<AdminCustomers />} />
           <Route path="marketing" element={<AdminMarketing />} />
+          <Route path="notifications" element={<AdminNotifications />} />
+          <Route path="social-media" element={<AdminSocialMedia />} />
           <Route path="analytics" element={<AdminAnalytics />} />
           <Route path="shipping" element={<AdminShipping />} />
           <Route path="activity-logs" element={<AdminActivityLogs />} />
@@ -79,6 +104,7 @@ function App() {
         </Route>
       </Routes>
       <Toaster position="top-right" />
+      <Chatbot />
     </>
   )
 }

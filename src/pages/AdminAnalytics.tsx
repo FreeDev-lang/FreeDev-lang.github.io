@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { analyticsApi } from '../lib/api'
-import { TrendingUp, Users, DollarSign, ShoppingCart } from 'lucide-react'
+import { TrendingUp, Users, DollarSign, ShoppingCart, Download } from 'lucide-react'
+import toast from 'react-hot-toast'
 
 export default function AdminAnalytics() {
   const [dateRange, setDateRange] = useState({
@@ -57,6 +58,30 @@ export default function AdminAnalytics() {
             onChange={(e) => setDateRange({ ...dateRange, toDate: e.target.value })}
             className="border border-gray-300 rounded-lg px-3 py-2"
           />
+          <button
+            onClick={async () => {
+              try {
+                const response = await analyticsApi.getDashboardReportPdf({
+                  fromDate: dateRange.fromDate,
+                  toDate: dateRange.toDate,
+                })
+                const url = window.URL.createObjectURL(new Blob([response.data]))
+                const link = document.createElement('a')
+                link.href = url
+                link.setAttribute('download', `dashboard-report-${dateRange.fromDate}-${dateRange.toDate}.pdf`)
+                document.body.appendChild(link)
+                link.click()
+                link.remove()
+                toast.success('Dashboard report downloaded')
+              } catch (error) {
+                toast.error('Failed to download report')
+              }
+            }}
+            className="bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 flex items-center gap-2"
+          >
+            <Download className="w-5 h-5" />
+            Export PDF
+          </button>
         </div>
       </div>
 
@@ -106,7 +131,30 @@ export default function AdminAnalytics() {
 
       {/* Top Products */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
-        <h2 className="text-xl font-bold text-gray-900 mb-4">Top Products</h2>
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-bold text-gray-900">Top Products</h2>
+          <button
+            onClick={async () => {
+              try {
+                const response = await analyticsApi.getSalesReportPdf(dateRange.fromDate, dateRange.toDate)
+                const url = window.URL.createObjectURL(new Blob([response.data]))
+                const link = document.createElement('a')
+                link.href = url
+                link.setAttribute('download', `sales-report-${dateRange.fromDate}-${dateRange.toDate}.pdf`)
+                document.body.appendChild(link)
+                link.click()
+                link.remove()
+                toast.success('Sales report downloaded')
+              } catch (error) {
+                toast.error('Failed to download sales report')
+              }
+            }}
+            className="text-primary-600 hover:text-primary-700 flex items-center gap-2 text-sm"
+          >
+            <Download className="w-4 h-4" />
+            Export Sales PDF
+          </button>
+        </div>
         {topProducts && topProducts.length > 0 ? (
           <div className="overflow-x-auto">
             <table className="w-full">
@@ -141,7 +189,33 @@ export default function AdminAnalytics() {
       {/* Customer Analytics */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">Customer Analytics</h2>
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-bold text-gray-900">Customer Analytics</h2>
+            <button
+              onClick={async () => {
+                try {
+                  const response = await analyticsApi.getCustomerAnalyticsPdf({
+                    fromDate: dateRange.fromDate,
+                    toDate: dateRange.toDate,
+                  })
+                  const url = window.URL.createObjectURL(new Blob([response.data]))
+                  const link = document.createElement('a')
+                  link.href = url
+                  link.setAttribute('download', `customer-analytics-${dateRange.fromDate}-${dateRange.toDate}.pdf`)
+                  document.body.appendChild(link)
+                  link.click()
+                  link.remove()
+                  toast.success('Customer analytics report downloaded')
+                } catch (error) {
+                  toast.error('Failed to download customer analytics report')
+                }
+              }}
+              className="text-primary-600 hover:text-primary-700 flex items-center gap-2 text-sm"
+            >
+              <Download className="w-4 h-4" />
+              Export PDF
+            </button>
+          </div>
           <div className="space-y-3">
             <div className="flex justify-between">
               <span className="text-gray-600">New Customers</span>
@@ -162,7 +236,33 @@ export default function AdminAnalytics() {
 
         {/* Coupon Usage */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">Coupon Usage</h2>
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-bold text-gray-900">Coupon Usage</h2>
+            <button
+              onClick={async () => {
+                try {
+                  const response = await analyticsApi.getCouponUsageReportPdf({
+                    fromDate: dateRange.fromDate,
+                    toDate: dateRange.toDate,
+                  })
+                  const url = window.URL.createObjectURL(new Blob([response.data]))
+                  const link = document.createElement('a')
+                  link.href = url
+                  link.setAttribute('download', `coupon-usage-${dateRange.fromDate}-${dateRange.toDate}.pdf`)
+                  document.body.appendChild(link)
+                  link.click()
+                  link.remove()
+                  toast.success('Coupon usage report downloaded')
+                } catch (error) {
+                  toast.error('Failed to download coupon usage report')
+                }
+              }}
+              className="text-primary-600 hover:text-primary-700 flex items-center gap-2 text-sm"
+            >
+              <Download className="w-4 h-4" />
+              Export PDF
+            </button>
+          </div>
           <div className="space-y-3">
             <div className="flex justify-between">
               <span className="text-gray-600">Total Coupons</span>

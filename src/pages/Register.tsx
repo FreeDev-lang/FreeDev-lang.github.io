@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form'
 import { authApi } from '../lib/api'
 import { useAuthStore } from '../store/authStore'
 import toast from 'react-hot-toast'
+import { UserPlus, Mail, Lock, User } from 'lucide-react'
 
 export default function Register() {
   const navigate = useNavigate()
@@ -21,42 +22,46 @@ export default function Register() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-50 to-primary-100 py-12 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-50 via-white to-primary-100 py-12 px-4">
       <div className="max-w-md w-full">
         <div className="text-center mb-8">
-          <div className="flex items-center justify-center mb-4">
-            <div className="w-16 h-16 bg-gradient-to-br from-primary-500 to-primary-700 rounded-xl flex items-center justify-center">
-              <span className="text-white font-bold text-2xl">F</span>
+          <div className="flex items-center justify-center mb-6">
+            <div className="w-20 h-20 bg-gradient-to-br from-primary-500 to-primary-700 rounded-2xl flex items-center justify-center shadow-lg">
+              <UserPlus className="w-10 h-10 text-white" />
             </div>
           </div>
-          <h1 className="text-3xl font-bold text-gray-900">Create Account</h1>
-          <p className="text-gray-600 mt-2">Join Fria today</p>
+          <h1 className="text-4xl font-bold text-gray-900 mb-2">Create Account</h1>
+          <p className="text-gray-600 text-lg">Join Fria and transform your space</p>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-xl p-8">
+        <div className="bg-white rounded-3xl shadow-2xl border border-gray-200 p-8">
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                  <User className="w-4 h-4" />
                   First Name
                 </label>
                 <input
                   type="text"
                   {...register('firstName', { required: 'First name is required' })}
-                  className="input"
+                  className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+                  placeholder="John"
                 />
                 {errors.firstName && (
                   <p className="text-red-500 text-sm mt-1">{errors.firstName.message as string}</p>
                 )}
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                  <User className="w-4 h-4" />
                   Last Name
                 </label>
                 <input
                   type="text"
                   {...register('lastName', { required: 'Last name is required' })}
-                  className="input"
+                  className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+                  placeholder="Doe"
                 />
                 {errors.lastName && (
                   <p className="text-red-500 text-sm mt-1">{errors.lastName.message as string}</p>
@@ -65,13 +70,14 @@ export default function Register() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                <Mail className="w-4 h-4" />
                 Email
               </label>
               <input
                 type="email"
                 {...register('email', { required: 'Email is required' })}
-                className="input"
+                className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
                 placeholder="you@example.com"
               />
               {errors.email && (
@@ -80,7 +86,8 @@ export default function Register() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                <Lock className="w-4 h-4" />
                 Password
               </label>
               <input
@@ -89,7 +96,7 @@ export default function Register() {
                   required: 'Password is required',
                   minLength: { value: 6, message: 'Password must be at least 6 characters' }
                 })}
-                className="input"
+                className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
                 placeholder="••••••••"
               />
               {errors.password && (
@@ -97,16 +104,22 @@ export default function Register() {
               )}
             </div>
 
-            <button type="submit" className="w-full btn btn-primary">
+            <button
+              type="submit"
+              className="w-full bg-primary-600 text-white py-4 rounded-xl font-semibold text-lg hover:bg-primary-700 transition-all shadow-lg hover:shadow-xl transform hover:scale-[1.02] flex items-center justify-center gap-2"
+            >
+              <UserPlus className="w-5 h-5" />
               Create Account
             </button>
           </form>
 
-          <div className="mt-6 text-center text-sm">
-            <span className="text-gray-600">Already have an account? </span>
-            <Link to="/login" className="text-primary-600 hover:text-primary-700 font-medium">
-              Sign in
-            </Link>
+          <div className="mt-8 pt-6 border-t border-gray-200">
+            <p className="text-center text-sm text-gray-600">
+              Already have an account?{' '}
+              <Link to="/login" className="text-primary-600 hover:text-primary-700 font-semibold">
+                Sign in
+              </Link>
+            </p>
           </div>
         </div>
       </div>

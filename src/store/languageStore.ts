@@ -9,6 +9,13 @@ export interface CurrencyConfig {
   name: string
 }
 
+// Platform currency will override language-based currency
+let platformCurrency: CurrencyConfig | null = null
+
+export const setPlatformCurrency = (currency: CurrencyConfig) => {
+  platformCurrency = currency
+}
+
 const currencyMap: Record<Language, CurrencyConfig> = {
   en: { code: 'USD', symbol: '$', name: 'US Dollar' },
   fr: { code: 'EUR', symbol: '€', name: 'Euro' },
@@ -32,15 +39,18 @@ export const useLanguageStore = create<LanguageStore>()(
   persist(
     (set, get) => ({
       language: 'en',
-      currency: currencyMap.en,
+      currency: platformCurrency || currencyMap.en,
       setLanguage: (lang: Language) => {
-        set({ language: lang, currency: currencyMap[lang] })
+        // Use platform currency if set, otherwise use language-based currency
+        set({ language: lang, currency: platformCurrency || currencyMap[lang] })
       },
       formatCurrency: (amount: number) => {
         const { currency } = get()
+        // Use platform currency if available
+        const activeCurrency = platformCurrency || currency
         // For now, we'll just format with the symbol
         // In production, you might want to use Intl.NumberFormat for proper formatting
-        return `${currency.symbol}${amount.toFixed(2)}`
+        return `${activeCurrency.symbol}${amount.toFixed(2)}`
       },
     }),
     {

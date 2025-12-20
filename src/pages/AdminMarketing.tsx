@@ -11,7 +11,7 @@ export default function AdminMarketing() {
   const [bannerForm, setBannerForm] = useState({
     title: '',
     description: '',
-    imagePath: '',
+    imageFile: null as File | null,
     linkUrl: '',
     linkText: '',
     displayOrder: 0,
@@ -19,6 +19,7 @@ export default function AdminMarketing() {
     validFrom: '',
     validTo: '',
   })
+  const [imagePreview, setImagePreview] = useState<string | null>(null)
   const queryClient = useQueryClient()
 
   const { data: banners } = useQuery({
@@ -37,7 +38,7 @@ export default function AdminMarketing() {
   })
 
   const createBannerMutation = useMutation({
-    mutationFn: (data: any) => marketingApi.createBanner(data),
+    mutationFn: (formData: FormData) => marketingApi.createBanner(formData),
     onSuccess: () => {
       toast.success('Banner created successfully')
       setShowBannerModal(false)
@@ -47,7 +48,7 @@ export default function AdminMarketing() {
   })
 
   const updateBannerMutation = useMutation({
-    mutationFn: ({ id, data }: any) => marketingApi.updateBanner(id, data),
+    mutationFn: ({ id, formData }: any) => marketingApi.updateBanner(id, formData),
     onSuccess: () => {
       toast.success('Banner updated successfully')
       setShowBannerModal(false)
@@ -77,7 +78,7 @@ export default function AdminMarketing() {
     setBannerForm({
       title: '',
       description: '',
-      imagePath: '',
+      imageFile: null,
       linkUrl: '',
       linkText: '',
       displayOrder: 0,
@@ -85,6 +86,7 @@ export default function AdminMarketing() {
       validFrom: '',
       validTo: '',
     })
+    setImagePreview(null)
   }
 
   const handleEditBanner = (banner: any) => {
@@ -92,7 +94,7 @@ export default function AdminMarketing() {
     setBannerForm({
       title: banner.title,
       description: banner.description || '',
-      imagePath: banner.imagePath || '',
+      imageFile: null,
       linkUrl: banner.linkUrl || '',
       linkText: banner.linkText || '',
       displayOrder: banner.displayOrder,
@@ -100,19 +102,39 @@ export default function AdminMarketing() {
       validFrom: banner.validFrom ? banner.validFrom.split('T')[0] : '',
       validTo: banner.validTo ? banner.validTo.split('T')[0] : '',
     })
+    setImagePreview(banner.imageUrl || null)
     setShowBannerModal(true)
   }
 
-  const handleSaveBanner = () => {
-    const data = {
-      ...bannerForm,
-      validFrom: bannerForm.validFrom ? new Date(bannerForm.validFrom).toISOString() : null,
-      validTo: bannerForm.validTo ? new Date(bannerForm.validTo).toISOString() : null,
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      setBannerForm({ ...bannerForm, imageFile: file })
+      // Create preview
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string)
+      }
+      reader.readAsDataURL(file)
     }
+  }
+
+  const handleSaveBanner = () => {
+    const formData = new FormData()
+    formData.append('title', bannerForm.title)
+    if (bannerForm.description) formData.append('description', bannerForm.description)
+    if (bannerForm.imageFile) formData.append('imageFile', bannerForm.imageFile)
+    if (bannerForm.linkUrl) formData.append('linkUrl', bannerForm.linkUrl)
+    if (bannerForm.linkText) formData.append('linkText', bannerForm.linkText)
+    formData.append('displayOrder', bannerForm.displayOrder.toString())
+    formData.append('isActive', bannerForm.isActive.toString())
+    if (bannerForm.validFrom) formData.append('validFrom', new Date(bannerForm.validFrom).toISOString())
+    if (bannerForm.validTo) formData.append('validTo', new Date(bannerForm.validTo).toISOString())
+
     if (editingBanner) {
-      updateBannerMutation.mutate({ id: editingBanner.id, data })
+      updateBannerMutation.mutate({ id: editingBanner.id, formData })
     } else {
-      createBannerMutation.mutate(data)
+      createBannerMutation.mutate(formData)
     }
   }
 
@@ -287,14 +309,25 @@ export default function AdminMarketing() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Image Path/URL</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Banner Image</label>
                 <input
-                  type="text"
-                  value={bannerForm.imagePath}
-                  onChange={(e) => setBannerForm({ ...bannerForm, imagePath: e.target.value })}
+                  type="file"
+                  accept="image/jpeg,image/jpg,image/png,image/webp"
+                  onChange={handleImageChange}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2"
-                  placeholder="Enter image URL or path"
                 />
+                {imagePreview && (
+                  <div className="mt-4">
+                    <img
+                      src={imagePreview}
+                      alt="Banner preview"
+                      className="w-full h-48 object-cover rounded-lg border border-gray-200"
+                    />
+                    <p className="text-xs text-gray-500 mt-2">
+                      Image will be resized to 1920x600 pixels
+                    </p>
+                  </div>
+                )}
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>

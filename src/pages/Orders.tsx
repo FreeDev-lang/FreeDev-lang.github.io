@@ -72,7 +72,7 @@ export default function Orders() {
                           const url = window.URL.createObjectURL(new Blob([response.data]))
                           const link = document.createElement('a')
                           link.href = url
-                          link.setAttribute('download', `order_receipt_${order.orderNumber}.txt`)
+                          link.setAttribute('download', `order_receipt_${order.orderNumber}.pdf`)
                           document.body.appendChild(link)
                           link.click()
                           link.remove()

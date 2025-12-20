@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { ArrowRight, Sparkles } from 'lucide-react'
-import { productsApi } from '../lib/api'
+import { productsApi, marketingApi } from '../lib/api'
 import ProductCard from '../components/ProductCard'
 import { motion } from 'framer-motion'
 import { useTypewriter } from '../hooks/useTypewriter'
@@ -10,6 +10,11 @@ export default function Home() {
   const { data: featured } = useQuery({
     queryKey: ['featured-products'],
     queryFn: () => productsApi.getFeatured(8).then(res => res.data),
+  })
+
+  const { data: banners } = useQuery({
+    queryKey: ['active-banners'],
+    queryFn: () => marketingApi.getActiveBanners().then(res => res.data),
   })
 
   const fullText = "Transform Your Space\nWith Fria"
@@ -63,6 +68,72 @@ export default function Home() {
 
   return (
     <div>
+      {/* Banners Section */}
+      {banners && banners.length > 0 && (
+        <section className="w-full overflow-hidden">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            {banners.map((banner: any) => (
+              <motion.div
+                key={banner.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+                className="mb-4"
+              >
+                {banner.linkUrl ? (
+                  <Link to={banner.linkUrl}>
+                    <div className="relative w-full rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow">
+                      {banner.imageUrl && (
+                        <img
+                          src={banner.imageUrl}
+                          alt={banner.title}
+                          className="w-full h-auto object-cover"
+                        />
+                      )}
+                      {(banner.title || banner.description) && (
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent flex flex-col justify-end p-6">
+                          {banner.title && (
+                            <h3 className="text-white text-2xl font-bold mb-2">{banner.title}</h3>
+                          )}
+                          {banner.description && (
+                            <p className="text-white/90 text-sm mb-3">{banner.description}</p>
+                          )}
+                          {banner.linkText && (
+                            <span className="inline-block bg-white text-primary-600 px-4 py-2 rounded-lg font-semibold text-sm hover:bg-primary-50 transition-colors">
+                              {banner.linkText}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </Link>
+                ) : (
+                  <div className="relative w-full rounded-xl overflow-hidden shadow-lg">
+                    {banner.imageUrl && (
+                      <img
+                        src={banner.imageUrl}
+                        alt={banner.title}
+                        className="w-full h-auto object-cover"
+                      />
+                    )}
+                    {(banner.title || banner.description) && (
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent flex flex-col justify-end p-6">
+                        {banner.title && (
+                          <h3 className="text-white text-2xl font-bold mb-2">{banner.title}</h3>
+                        )}
+                        {banner.description && (
+                          <p className="text-white/90 text-sm">{banner.description}</p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </motion.div>
+            ))}
+          </div>
+        </section>
+      )}
+
       {/* Hero Section */}
       <section 
         className="relative text-black overflow-hidden"

@@ -1,5 +1,5 @@
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom'
-import { LayoutDashboard, Package, Users, Warehouse, UsersRound, Megaphone, BarChart3, FileText, Truck, Shield, FolderTree, LogOut } from 'lucide-react'
+import { LayoutDashboard, Package, Users, Warehouse, UsersRound, Megaphone, BarChart3, FileText, Truck, Shield, FolderTree, LogOut, Bell, Share2 } from 'lucide-react'
 import { useAuthStore } from '../store/authStore'
 import { useTranslation } from '../utils/i18n'
 
@@ -22,6 +22,8 @@ export default function AdminLayout() {
     { path: '/admin/inventory', label: t('admin.inventory'), icon: Warehouse },
     { path: '/admin/customers', label: t('admin.customers'), icon: UsersRound },
     { path: '/admin/marketing', label: t('admin.marketing'), icon: Megaphone },
+    { path: '/admin/notifications', label: 'Push Notifications', icon: Bell },
+    { path: '/admin/social-media', label: 'Social Media', icon: Share2 },
     { path: '/admin/analytics', label: t('admin.analytics'), icon: BarChart3 },
     { path: '/admin/shipping', label: t('admin.shipping'), icon: Truck },
     { path: '/admin/activity-logs', label: t('admin.activityLogs'), icon: FileText },

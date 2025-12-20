@@ -1,14 +1,42 @@
-import { useQuery, useMutation } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { platformApi } from '../lib/api'
-import { Shield, Power, RefreshCw, AlertTriangle } from 'lucide-react'
+import { Shield, Power, RefreshCw, AlertTriangle, DollarSign } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { SuperAdminRoute } from '../components/AdminRoute'
+import { useState } from 'react'
 
 function AdminPlatformContent() {
+  const queryClient = useQueryClient()
   const { data: status } = useQuery({
     queryKey: ['platform-status'],
     queryFn: () => platformApi.getStatus().then(res => res.data),
   })
+
+  const { data: settings } = useQuery({
+    queryKey: ['platform-settings'],
+    queryFn: () => platformApi.getSettings().then(res => res.data),
+  })
+
+  const [selectedCurrency, setSelectedCurrency] = useState(settings?.currencyCode || 'USD')
+
+  const updateCurrencyMutation = useMutation({
+    mutationFn: (currencyCode: string) => platformApi.updateCurrency(currencyCode),
+    onSuccess: () => {
+      toast.success('Currency updated successfully')
+      queryClient.invalidateQueries({ queryKey: ['platform-settings'] })
+      // Invalidate currency-dependent queries
+      queryClient.invalidateQueries({ queryKey: ['cart'] })
+      queryClient.invalidateQueries({ queryKey: ['orders'] })
+    },
+    onError: () => {
+      toast.error('Failed to update currency')
+    },
+  })
+
+  const handleCurrencyChange = (currencyCode: string) => {
+    setSelectedCurrency(currencyCode)
+    updateCurrencyMutation.mutate(currencyCode)
+  }
 
   const shutdownMutation = useMutation({
     mutationFn: () => platformApi.shutdown(),
@@ -61,6 +89,39 @@ function AdminPlatformContent() {
             <p className="text-sm text-gray-600 mt-1">{status?.message}</p>
           </div>
         </div>
+      </div>
+
+      {/* Currency Settings */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+        <div className="flex items-center gap-3 mb-4">
+          <DollarSign className="w-8 h-8 text-green-600" />
+          <h3 className="text-lg font-bold text-gray-900">Platform Currency</h3>
+        </div>
+        <p className="text-gray-600 mb-4">
+          Set the default currency for the entire platform. This affects all prices displayed to users.
+        </p>
+        <div className="flex items-center gap-4">
+          <label className="text-sm font-medium text-gray-700">Current Currency:</label>
+          <select
+            value={selectedCurrency}
+            onChange={(e) => handleCurrencyChange(e.target.value)}
+            disabled={updateCurrencyMutation.isPending}
+            className="border border-gray-300 rounded-lg px-4 py-2 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <option value="DZA">د.ج - Algerian Dinar (DZA)</option>
+            <option value="EUR">€ - Euro (EUR)</option>
+            <option value="USD">$ - US Dollar (USD)</option>
+            <option value="CAD">C$ - Canadian Dollar (CAD)</option>
+          </select>
+          {settings && (
+            <span className="text-sm text-gray-600">
+              Symbol: {settings.currencySymbol} | Name: {settings.currencyName}
+            </span>
+          )}
+        </div>
+        {updateCurrencyMutation.isPending && (
+          <p className="text-sm text-blue-600 mt-2">Updating currency...</p>
+        )}
       </div>
 
       {/* Warning */}
