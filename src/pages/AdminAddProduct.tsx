@@ -15,7 +15,8 @@ export default function AdminAddProduct() {
   const [modelFile, setModelFile] = useState<File | null>(null)
   const [imageFiles, setImageFiles] = useState<File[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [activeTab, setActiveTab] = useState<'basic' | 'details' | 'ecommerce' | 'ar' | 'files' | 'colors' | 'textures'>('basic')
+  type TabType = 'basic' | 'details' | 'ecommerce' | 'ar' | 'files' | 'colors' | 'textures'
+  const [activeTab, setActiveTab] = useState<TabType>('basic')
   const [existingImages, setExistingImages] = useState<string[]>([])
   const [originalData, setOriginalData] = useState<any>(null)
   const queryClient = useQueryClient()
@@ -225,7 +226,7 @@ export default function AdminAddProduct() {
     setImageFiles(prev => prev.filter((_, i) => i !== index))
   }
 
-  const tabs = [
+  const tabs: Array<{ id: TabType; label: string }> = [
     { id: 'basic', label: 'Basic Info' },
     { id: 'details', label: 'Product Details' },
     { id: 'ecommerce', label: 'E-commerce' },
@@ -948,7 +949,7 @@ export default function AdminAddProduct() {
                 )}
 
                 {/* Textures Tab */}
-                {activeTab === 'textures' && (
+                {(activeTab as TabType) === 'textures' && (
                   <div className="p-6 space-y-6">
                     {!isEditing ? (
                       <div className="text-center py-8 text-gray-500">
