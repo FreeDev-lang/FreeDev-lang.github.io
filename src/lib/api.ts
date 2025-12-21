@@ -76,6 +76,14 @@ export const productColorsApi = {
   delete: (id: number) => api.delete(`/productcolors/${id}`),
 }
 
+// Product Textures API
+export const productTexturesApi = {
+  getByProduct: (productId: number) => api.get(`/producttextures/product/${productId}`),
+  create: (productId: number, data: any) => api.post(`/producttextures/product/${productId}`, data),
+  update: (id: number, data: any) => api.put(`/producttextures/${id}`, data),
+  delete: (id: number) => api.delete(`/producttextures/${id}`),
+}
+
 // Cart API
 export const cartApi = {
   get: () => api.get('/cart'),
