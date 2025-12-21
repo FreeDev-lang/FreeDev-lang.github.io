@@ -79,8 +79,12 @@ export const productColorsApi = {
 // Product Textures API
 export const productTexturesApi = {
   getByProduct: (productId: number) => api.get(`/producttextures/product/${productId}`),
-  create: (productId: number, data: any) => api.post(`/producttextures/product/${productId}`, data),
-  update: (id: number, data: any) => api.put(`/producttextures/${id}`, data),
+  create: (productId: number, formData: FormData) => api.post(`/producttextures/product/${productId}`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  }),
+  update: (id: number, formData: FormData) => api.put(`/producttextures/${id}`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  }),
   delete: (id: number) => api.delete(`/producttextures/${id}`),
 }
 

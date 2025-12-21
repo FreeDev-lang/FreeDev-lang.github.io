@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { useNavigate, useParams } from 'react-router-dom'
-import { productsApi, categoriesApi, productColorsApi } from '../lib/api'
+import { productsApi, categoriesApi, productColorsApi, productTexturesApi } from '../lib/api'
 import { ArrowLeft, Upload, X, Plus, Trash2 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import toast from 'react-hot-toast'
@@ -15,7 +15,7 @@ export default function AdminAddProduct() {
   const [modelFile, setModelFile] = useState<File | null>(null)
   const [imageFiles, setImageFiles] = useState<File[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [activeTab, setActiveTab] = useState<'basic' | 'details' | 'ecommerce' | 'ar' | 'files' | 'colors'>('basic')
+  const [activeTab, setActiveTab] = useState<'basic' | 'details' | 'ecommerce' | 'ar' | 'files' | 'colors' | 'textures'>('basic')
   const [existingImages, setExistingImages] = useState<string[]>([])
   const [originalData, setOriginalData] = useState<any>(null)
   const queryClient = useQueryClient()
@@ -34,6 +34,12 @@ export default function AdminAddProduct() {
   const { data: productColors = [] } = useQuery({
     queryKey: ['product-colors', id],
     queryFn: () => productColorsApi.getByProduct(Number(id)).then(res => res.data),
+    enabled: isEditing && !!id,
+  })
+
+  const { data: productTextures = [] } = useQuery({
+    queryKey: ['product-textures', id],
+    queryFn: () => productTexturesApi.getByProduct(Number(id)).then(res => res.data),
     enabled: isEditing && !!id,
   })
 
@@ -226,6 +232,7 @@ export default function AdminAddProduct() {
     { id: 'ar', label: 'AR Settings' },
     { id: 'files', label: 'Files' },
     { id: 'colors', label: 'Available Colors' },
+    { id: 'textures', label: 'Available Textures' },
   ]
 
   // Color management
@@ -290,6 +297,109 @@ export default function AdminAddProduct() {
   const handleDeleteColor = (colorId: number) => {
     if (window.confirm('Are you sure you want to delete this color?')) {
       deleteColorMutation.mutate(colorId)
+    }
+  }
+
+  // Texture management
+  const [newTexture, setNewTexture] = useState({ name: '', textureImageFile: null as File | null, thumbnailFile: null as File | null, isDefault: false, isAvailable: true, displayOrder: 0 })
+  const [editingTexture, setEditingTexture] = useState<any>(null)
+
+  const createTextureMutation = useMutation({
+    mutationFn: async (formData: FormData) => {
+      return productTexturesApi.create(Number(id), formData)
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['product-textures', id] })
+      setNewTexture({ name: '', textureImageFile: null, thumbnailFile: null, isDefault: false, isAvailable: true, displayOrder: 0 })
+      toast.success('Texture added successfully')
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Failed to add texture')
+    },
+  })
+
+  const updateTextureMutation = useMutation({
+    mutationFn: async ({ id: textureId, formData }: { id: number, formData: FormData }) => {
+      return productTexturesApi.update(textureId, formData)
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['product-textures', id] })
+      setEditingTexture(null)
+      toast.success('Texture updated successfully')
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Failed to update texture')
+    },
+  })
+
+  const deleteTextureMutation = useMutation({
+    mutationFn: (textureId: number) => productTexturesApi.delete(textureId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['product-textures', id] })
+      toast.success('Texture deleted successfully')
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Failed to delete texture')
+    },
+  })
+
+  const handleAddTexture = () => {
+    if (!newTexture.name.trim()) {
+      toast.error('Texture name is required')
+      return
+    }
+    if (!newTexture.textureImageFile) {
+      toast.error('Texture image file is required')
+      return
+    }
+    if (!isEditing || !id) {
+      toast.error('Please save the product first before adding textures')
+      return
+    }
+
+    const formData = new FormData()
+    formData.append('name', newTexture.name)
+    formData.append('textureImageFile', newTexture.textureImageFile)
+    if (newTexture.thumbnailFile) {
+      formData.append('thumbnailFile', newTexture.thumbnailFile)
+    }
+    formData.append('isDefault', String(newTexture.isDefault))
+    formData.append('isAvailable', String(newTexture.isAvailable))
+    formData.append('displayOrder', String(newTexture.displayOrder))
+
+    createTextureMutation.mutate(formData)
+  }
+
+  const handleUpdateTexture = () => {
+    if (!editingTexture?.name?.trim()) {
+      toast.error('Texture name is required')
+      return
+    }
+
+    const formData = new FormData()
+    formData.append('name', editingTexture.name)
+    if (editingTexture.textureImageFile) {
+      formData.append('textureImageFile', editingTexture.textureImageFile)
+    }
+    if (editingTexture.thumbnailFile) {
+      formData.append('thumbnailFile', editingTexture.thumbnailFile)
+    }
+    if (editingTexture.isDefault !== undefined) {
+      formData.append('isDefault', String(editingTexture.isDefault))
+    }
+    if (editingTexture.isAvailable !== undefined) {
+      formData.append('isAvailable', String(editingTexture.isAvailable))
+    }
+    if (editingTexture.displayOrder !== undefined) {
+      formData.append('displayOrder', String(editingTexture.displayOrder))
+    }
+
+    updateTextureMutation.mutate({ id: editingTexture.id, formData })
+  }
+
+  const handleDeleteTexture = (textureId: number) => {
+    if (window.confirm('Are you sure you want to delete this texture?')) {
+      deleteTextureMutation.mutate(textureId)
     }
   }
 
@@ -835,6 +945,190 @@ export default function AdminAddProduct() {
                       </div>
                     )}
                   </>
+                )}
+
+                {/* Textures Tab */}
+                {activeTab === 'textures' && (
+                  <div className="p-6 space-y-6">
+                    {!isEditing ? (
+                      <div className="text-center py-8 text-gray-500">
+                        Please save the product first before adding textures.
+                      </div>
+                    ) : (
+                      <>
+                        <div>
+                          <h3 className="text-lg font-semibold text-gray-900 mb-4">Add New Texture</h3>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-2">Texture Name</label>
+                              <input
+                                type="text"
+                                value={newTexture.name}
+                                onChange={(e) => setNewTexture({ ...newTexture, name: e.target.value })}
+                                className="input"
+                                placeholder="e.g., Oak Wood, Dark Walnut"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-2">Texture Image (Required)</label>
+                              <input
+                                type="file"
+                                accept="image/*"
+                                onChange={(e) => setNewTexture({ ...newTexture, textureImageFile: e.target.files?.[0] || null })}
+                                className="input"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-2">Thumbnail (Optional)</label>
+                              <input
+                                type="file"
+                                accept="image/*"
+                                onChange={(e) => setNewTexture({ ...newTexture, thumbnailFile: e.target.files?.[0] || null })}
+                                className="input"
+                              />
+                            </div>
+                            <div className="flex items-end gap-4">
+                              <label className="flex items-center gap-2">
+                                <input
+                                  type="checkbox"
+                                  checked={newTexture.isDefault}
+                                  onChange={(e) => setNewTexture({ ...newTexture, isDefault: e.target.checked })}
+                                  className="rounded"
+                                />
+                                <span className="text-sm text-gray-700">Set as default</span>
+                              </label>
+                              <button
+                                type="button"
+                                onClick={handleAddTexture}
+                                disabled={createTextureMutation.isPending}
+                                className="btn btn-primary flex-1"
+                              >
+                                {createTextureMutation.isPending ? 'Adding...' : <><Plus className="w-4 h-4 mr-2" />Add Texture</>}
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div>
+                          <h3 className="text-lg font-semibold text-gray-900 mb-4">Existing Textures</h3>
+                          {productTextures.length === 0 ? (
+                            <p className="text-gray-500 text-center py-8">No textures added yet. Add your first texture above.</p>
+                          ) : (
+                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                              {productTextures.map((texture: any) => (
+                                <div
+                                  key={texture.id}
+                                  className="relative bg-white border border-gray-200 rounded-lg overflow-hidden"
+                                >
+                                  <div className="aspect-square bg-gray-100">
+                                    <img
+                                      src={texture.thumbnailUrl || texture.textureImageUrl}
+                                      alt={texture.name}
+                                      className="w-full h-full object-cover"
+                                      onError={(e) => {
+                                        (e.target as HTMLImageElement).src = '/placeholder-texture.png'
+                                      }}
+                                    />
+                                  </div>
+                                  <div className="p-3">
+                                    <p className="font-medium text-gray-900 text-sm">{texture.name}</p>
+                                    {texture.isDefault && (
+                                      <span className="text-xs text-primary-600">Default</span>
+                                    )}
+                                  </div>
+                                  <div className="absolute top-2 right-2 flex gap-1">
+                                    <button
+                                      type="button"
+                                      onClick={() => setEditingTexture({ ...texture, textureImageFile: null, thumbnailFile: null })}
+                                      className="p-1 bg-white rounded shadow-sm hover:bg-gray-50"
+                                    >
+                                      <span className="text-xs">Edit</span>
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleDeleteTexture(texture.id)}
+                                      disabled={deleteTextureMutation.isPending}
+                                      className="p-1 bg-red-500 text-white rounded shadow-sm hover:bg-red-600 disabled:opacity-50"
+                                    >
+                                      <Trash2 className="w-3 h-3" />
+                                    </button>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+
+                        {editingTexture && (
+                          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                            <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
+                              <h3 className="text-lg font-semibold mb-4">Edit Texture</h3>
+                              <div className="space-y-4">
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700 mb-2">Texture Name</label>
+                                  <input
+                                    type="text"
+                                    value={editingTexture.name}
+                                    onChange={(e) => setEditingTexture({ ...editingTexture, name: e.target.value })}
+                                    className="input"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700 mb-2">New Texture Image (Optional)</label>
+                                  <input
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={(e) => setEditingTexture({ ...editingTexture, textureImageFile: e.target.files?.[0] || null })}
+                                    className="input"
+                                  />
+                                  {!editingTexture.textureImageFile && (
+                                    <p className="text-xs text-gray-500 mt-1">Current: {editingTexture.textureImageUrl}</p>
+                                  )}
+                                </div>
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700 mb-2">New Thumbnail (Optional)</label>
+                                  <input
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={(e) => setEditingTexture({ ...editingTexture, thumbnailFile: e.target.files?.[0] || null })}
+                                    className="input"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="flex items-center gap-2">
+                                    <input
+                                      type="checkbox"
+                                      checked={editingTexture.isDefault || false}
+                                      onChange={(e) => setEditingTexture({ ...editingTexture, isDefault: e.target.checked })}
+                                      className="rounded"
+                                    />
+                                    <span className="text-sm text-gray-700">Set as default</span>
+                                  </label>
+                                </div>
+                                <div className="flex gap-2">
+                                  <button
+                                    type="button"
+                                    onClick={() => setEditingTexture(null)}
+                                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+                                  >
+                                    Cancel
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={handleUpdateTexture}
+                                    disabled={updateTextureMutation.isPending}
+                                    className="flex-1 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50"
+                                  >
+                                    {updateTextureMutation.isPending ? 'Saving...' : 'Save'}
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
                 )}
               </div>
             )}
