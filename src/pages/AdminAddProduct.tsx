@@ -947,10 +947,12 @@ export default function AdminAddProduct() {
                     )}
                   </>
                 )}
+              </div>
+            )}
 
-                {/* Textures Tab */}
+            {/* Textures Tab */}
                 {(activeTab as TabType) === 'textures' && (
-                  <div className="p-6 space-y-6">
+                  <div className="space-y-6">
                     {!isEditing ? (
                       <div className="text-center py-8 text-gray-500">
                         Please save the product first before adding textures.
@@ -1131,8 +1133,6 @@ export default function AdminAddProduct() {
                     )}
                   </div>
                 )}
-              </div>
-            )}
           </div>
         </div>
 
