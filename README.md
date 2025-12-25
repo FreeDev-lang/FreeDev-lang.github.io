@@ -54,7 +54,10 @@ Create a `.env` file in the root directory:
 
 ```env
 VITE_API_URL=https://localhost:5001/api
+VITE_FRONTEND_URL=https://freedev-lang.github.io
 ```
+
+**Note:** `VITE_FRONTEND_URL` is used for generating QR codes for the AR feature. If not set, it defaults to the current origin.
 
 ## Project Structure
 

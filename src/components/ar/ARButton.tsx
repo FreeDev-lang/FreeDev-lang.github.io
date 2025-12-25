@@ -27,23 +27,10 @@ export default function ARButton({ productId, productName, textureId }: ARButton
     }
   }
 
-  // Extract base URL from API URL (remove /api suffix) or use current origin
-  const getFrontendUrl = () => {
-    const apiUrl = import.meta.env.VITE_API_URL
-    if (apiUrl) {
-      try {
-        const url = new URL(apiUrl.replace('/api', ''))
-        // Return protocol + host (e.g., https://yourdomain.com)
-        return `${url.protocol}//${url.host}`
-      } catch {
-        // If URL parsing fails, fallback to window.location.origin
-        return window.location.origin
-      }
-    }
-    return window.location.origin
-  }
-  
-  const arUrl = `${getFrontendUrl()}/ar?productId=${productId}${textureId ? `&textureId=${textureId}` : ''}`
+  // Use VITE_FRONTEND_URL if set, otherwise use current origin
+  // For production, set VITE_FRONTEND_URL=https://freedev-lang.github.io in your .env file
+  const frontendBaseUrl = import.meta.env.VITE_FRONTEND_URL || window.location.origin
+  const arUrl = `${frontendBaseUrl}/ar?productId=${productId}${textureId ? `&textureId=${textureId}` : ''}`
 
   if (showQR && isDesktop) {
     return (

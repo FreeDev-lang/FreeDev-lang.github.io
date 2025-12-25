@@ -33,6 +33,10 @@ jobs:
           # Set base path to '/' for root GitHub Pages (freedev-lang.github.io)
           # If deploying to a subdirectory, change this to '/repo-name/'
           VITE_BASE_PATH: '/'
+          # Frontend URL for QR code generation in AR feature
+          VITE_FRONTEND_URL: 'https://freedev-lang.github.io'
+          # Set your API URL here (or use GitHub Secrets for sensitive data)
+          # VITE_API_URL: ${{ secrets.VITE_API_URL }}
         run: npm run build
       
       - name: Add .nojekyll file
