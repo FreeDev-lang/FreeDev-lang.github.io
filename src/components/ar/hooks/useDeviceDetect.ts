@@ -18,27 +18,39 @@ export function useDeviceDetect(): DeviceInfo {
   })
 
   useEffect(() => {
-    const userAgent = navigator.userAgent || navigator.vendor || (window as any).opera
+    const checkWebXRSupport = async () => {
+      const userAgent = navigator.userAgent || navigator.vendor || (window as any).opera
 
-    const isIOS = /iPad|iPhone|iPod/.test(userAgent) && !(window as any).MSStream
-    const isAndroid = /android/i.test(userAgent)
-    const isMobile = isIOS || isAndroid
-    const isDesktop = !isMobile
+      const isIOS = /iPad|iPhone|iPod/.test(userAgent) && !(window as any).MSStream
+      const isAndroid = /android/i.test(userAgent)
+      const isMobile = isIOS || isAndroid
+      const isDesktop = !isMobile
 
-    // Check WebXR support
-    const supportsWebXR =
-      'xr' in navigator &&
-      navigator.xr !== undefined &&
-      'isSessionSupported' in navigator.xr &&
-      typeof navigator.xr.isSessionSupported === 'function'
+      // Check WebXR support - try to actually check if AR is supported
+      let supportsWebXR = false
+      
+      if ('xr' in navigator && navigator.xr !== undefined) {
+        try {
+          // Check if immersive-ar session is supported
+          if (typeof navigator.xr.isSessionSupported === 'function') {
+            supportsWebXR = await navigator.xr.isSessionSupported('immersive-ar')
+          }
+        } catch (error) {
+          console.warn('WebXR support check failed:', error)
+          supportsWebXR = false
+        }
+      }
 
-    setDeviceInfo({
-      isMobile,
-      isIOS,
-      isAndroid,
-      isDesktop,
-      supportsWebXR,
-    })
+      setDeviceInfo({
+        isMobile,
+        isIOS,
+        isAndroid,
+        isDesktop,
+        supportsWebXR,
+      })
+    }
+
+    checkWebXRSupport()
   }, [])
 
   return deviceInfo

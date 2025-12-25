@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { productsApi, productColorsApi } from '../../lib/api'
-import { useARSession } from './hooks/useARSession'
 import { useGLBLoader } from './hooks/useGLBLoader'
 import { useTextureLoader } from './hooks/useTextureLoader'
 import { useGestures } from './hooks/useGestures'
@@ -13,6 +12,7 @@ import ARControls from './ARControls'
 import ARInstructions from './ARInstructions'
 import TextureSelector from './TextureSelector'
 import ProductPicker from './ProductPicker'
+import { ARErrorBoundary } from './ARErrorBoundary'
 import toast from 'react-hot-toast'
 import * as THREE from 'three'
 
@@ -30,7 +30,7 @@ export default function ARViewer({
   const [currentProduct, setCurrentProduct] = useState<Product | null>(null)
   const [availableTextures, setAvailableTextures] = useState<ProductTexture[]>([])
 
-  const arSession = useARSession()
+  // Remove arSession hook - React Three XR handles this internally
   const glbLoader = useGLBLoader()
   const textureLoader = useTextureLoader()
 
@@ -249,65 +249,93 @@ export default function ARViewer({
     toast.success('Added to cart!')
   }, [placedObjects, onAddToCart])
 
-  if (!arSession.isSupported) {
+  // Show loading state while checking support
+  const [supportChecked, setSupportChecked] = useState(false)
+  
+  useEffect(() => {
+    // Give it a moment to check support
+    const timer = setTimeout(() => setSupportChecked(true), 500)
+    return () => clearTimeout(timer)
+  }, [])
+
+  if (!supportChecked) {
     return (
       <div className="fixed inset-0 z-50 bg-white flex items-center justify-center">
         <div className="text-center p-6">
-          <h2 className="text-2xl font-bold mb-4">AR Not Supported</h2>
-          <p className="text-gray-600 mb-6">
-            Your device or browser doesn't support WebXR AR. Please use a compatible device.
-          </p>
-          <button
-            onClick={onClose}
-            className="px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
-          >
-            Close
-          </button>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Checking AR support...</p>
         </div>
       </div>
     )
   }
 
+  // Don't block if not supported - let React Three XR handle it
+  // The XRButton will show appropriate UI if not supported
+
   return (
-    <div className="fixed inset-0 z-50 bg-black">
-      {showInstructions && <ARInstructions />}
-      
-      {showTextureSelector && (
-        <TextureSelector
-          textures={availableTextures}
-          selectedTextureId={
-            placedObjects.find((obj) => obj.id === selectedObjectId)?.currentTextureId || ''
-          }
-          onSelect={handleTextureChange}
-          onClose={() => setShowTextureSelector(false)}
-        />
-      )}
+    <ARErrorBoundary>
+      <div 
+        className="fixed inset-0 z-50 bg-black" 
+        style={{ 
+          width: '100vw', 
+          height: '100vh', 
+          overflow: 'hidden',
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0
+        }}
+      >
+        {showInstructions && <ARInstructions />}
+        
+        {showTextureSelector && (
+          <TextureSelector
+            textures={availableTextures}
+            selectedTextureId={
+              placedObjects.find((obj) => obj.id === selectedObjectId)?.currentTextureId || ''
+            }
+            onSelect={handleTextureChange}
+            onClose={() => setShowTextureSelector(false)}
+          />
+        )}
 
-      {showProductPicker && (
-        <ProductPicker
-          onSelect={handleAddProduct}
-          onClose={() => setShowProductPicker(false)}
-          excludeProductIds={placedObjects.map((obj) => obj.productId)}
-        />
-      )}
+        {showProductPicker && (
+          <ProductPicker
+            onSelect={handleAddProduct}
+            onClose={() => setShowProductPicker(false)}
+            excludeProductIds={placedObjects.map((obj) => obj.productId)}
+          />
+        )}
 
-      <ARScene onSurfaceHit={handleSurfaceHit}>
-        <ARObjectManager
-          objects={placedObjects}
-          onObjectUpdate={handleObjectUpdate}
-          onObjectSelect={setSelectedObjectId}
-          selectedObjectId={selectedObjectId}
-        />
-      </ARScene>
+        <div style={{ 
+          width: '100%', 
+          height: '100%', 
+          position: 'absolute', 
+          top: 0, 
+          left: 0,
+          right: 0,
+          bottom: 0
+        }}>
+          <ARScene onSurfaceHit={handleSurfaceHit}>
+            <ARObjectManager
+              objects={placedObjects}
+              onObjectUpdate={handleObjectUpdate}
+              onObjectSelect={setSelectedObjectId}
+              selectedObjectId={selectedObjectId}
+            />
+          </ARScene>
+        </div>
 
-      <ARControls
-        onClose={onClose}
-        onAddProduct={() => setShowProductPicker(true)}
-        onChangeTexture={() => setShowTextureSelector(true)}
-        onAddToCart={handleAddToCart}
-        hasSelectedObject={!!selectedObjectId}
-      />
-    </div>
+        <ARControls
+          onClose={onClose}
+          onAddProduct={() => setShowProductPicker(true)}
+          onChangeTexture={() => setShowTextureSelector(true)}
+          onAddToCart={handleAddToCart}
+          hasSelectedObject={!!selectedObjectId}
+        />
+      </div>
+    </ARErrorBoundary>
   )
 }
 

@@ -129,9 +129,16 @@ npm run dev
 
 ## Browser Support
 
-- ✅ iOS Safari 15+ (with WebXR support)
-- ✅ Android Chrome 90+
-- ✅ Desktop browsers show QR code (AR not supported)
+- ⚠️ **iOS Safari**: WebXR AR support is **limited** on iOS. iOS 17+ has experimental WebXR support, but `immersive-ar` mode may not work reliably. Consider using the native ARKit through a WebView or native app for better iOS support.
+- ✅ **Android Chrome 90+**: Full WebXR AR support
+- ✅ **Desktop browsers**: Show QR code for mobile scanning (AR not supported)
+
+### Known iOS Limitation
+
+iOS Safari's WebXR implementation is experimental and may not support all WebXR features required for AR. If you need reliable AR on iOS, consider:
+1. Using a native iOS app with ARKit
+2. Using WebXR Viewer app (limited support)
+3. Providing a 3D model viewer fallback instead
 
 ## Known Limitations
 
