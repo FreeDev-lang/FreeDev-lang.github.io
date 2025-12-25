@@ -1,0 +1,65 @@
+import { useSearchParams, useNavigate } from 'react-router-dom'
+import { cartApi } from '../lib/api'
+import { useAuthStore } from '../store/authStore'
+import ARViewer from '../components/ar/ARViewer'
+import type { CartItem } from '../components/ar/types/ar.types'
+import toast from 'react-hot-toast'
+
+export default function ARViewerPage() {
+  const [searchParams] = useSearchParams()
+  const navigate = useNavigate()
+  const { isAuthenticated } = useAuthStore()
+  const productId = searchParams.get('productId')
+  const textureId = searchParams.get('textureId') || undefined
+
+  const handleClose = () => {
+    navigate(-1)
+  }
+
+  const handleAddToCart = async (items: CartItem[]) => {
+    if (!isAuthenticated()) {
+      toast.error('Please sign in to add items to cart')
+      navigate('/login')
+      return
+    }
+
+    try {
+      for (const item of items) {
+        await cartApi.add({
+          furnitureItemId: Number(item.productId),
+          quantity: item.quantity,
+        })
+      }
+      toast.success('Added to cart!')
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to add to cart')
+    }
+  }
+
+  if (!productId) {
+    return (
+      <div className="fixed inset-0 z-50 bg-white flex items-center justify-center">
+        <div className="text-center p-6">
+          <h2 className="text-2xl font-bold mb-4">Invalid Product</h2>
+          <p className="text-gray-600 mb-6">No product ID provided</p>
+          <button
+            onClick={handleClose}
+            className="px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
+          >
+            Go Back
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <ARViewer
+      initialProductId={productId}
+      initialTextureId={textureId}
+      onClose={handleClose}
+      onAddToCart={handleAddToCart}
+    />
+  )
+}
+

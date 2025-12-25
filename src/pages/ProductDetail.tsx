@@ -7,11 +7,11 @@ import { useAuthStore } from '../store/authStore'
 import toast from 'react-hot-toast'
 import { useQueryClient } from '@tanstack/react-query'
 import { useCurrency } from '../utils/currency'
+import ARButton from '../components/ar/ARButton'
 
 export default function ProductDetail() {
   const { id } = useParams()
   const [selectedColor, setSelectedColor] = useState<any>(null)
-  const [selectedTexture, setSelectedTexture] = useState<any>(null)
   const [quantity, setQuantity] = useState(1)
   const [isWishlisted, setIsWishlisted] = useState(false)
   const [showQRCode, setShowQRCode] = useState(false)
@@ -178,41 +178,7 @@ export default function ProductDetail() {
             )}
           </div>
 
-          {/* Available Textures */}
-          {product.availableTextures && product.availableTextures.length > 0 && (
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Available Textures
-              </label>
-              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
-                {product.availableTextures.map((texture: any) => (
-                  <button
-                    key={texture.id}
-                    onClick={() => setSelectedTexture(texture)}
-                    className={`relative aspect-square rounded-lg border-2 overflow-hidden transition-all ${
-                      selectedTexture?.id === texture.id
-                        ? 'border-primary-600 ring-2 ring-primary-400'
-                        : 'border-gray-300 hover:border-primary-400'
-                    }`}
-                  >
-                    <img
-                      src={texture.thumbnailUrl || texture.textureImageUrl}
-                      alt={texture.name}
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).src = '/placeholder-texture.png'
-                      }}
-                    />
-                    <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white text-xs p-1 text-center">
-                      {texture.name}
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-          
-          {/* Available Colors (kept for backward compatibility) */}
+          {/* Available Colors */}
           {product.availableColors && product.availableColors.length > 0 && (
             <div className="mb-6">
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -241,6 +207,21 @@ export default function ProductDetail() {
                   </button>
                 ))}
               </div>
+              {selectedColor?.modelPath && (
+                <div className="mt-4 p-4 bg-primary-50 rounded-lg">
+                  <p className="text-sm text-primary-700 mb-2">
+                    AR Model available for {selectedColor.colorName}
+                  </p>
+                  <a
+                    href={selectedColor.modelPath}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm text-primary-600 hover:underline"
+                  >
+                    View in AR →
+                  </a>
+                </div>
+              )}
             </div>
           )}
 
@@ -270,25 +251,35 @@ export default function ProductDetail() {
           </div>
 
           {/* Actions */}
-          <div className="flex gap-4 mb-8">
-            <button
-              onClick={handleAddToCart}
-              disabled={product.stockQuantity === 0}
-              className="flex-1 btn btn-primary flex items-center justify-center gap-2 disabled:opacity-50"
-            >
-              <ShoppingCart className="w-5 h-5" />
-              Add to Cart
-            </button>
-            <button
-              onClick={handleToggleWishlist}
-              className={`p-4 rounded-lg border-2 ${
-                isWishlisted
-                  ? 'border-red-500 bg-red-50 text-red-600'
-                  : 'border-gray-300 hover:border-primary-400'
-              }`}
-            >
-              <Heart className={`w-5 h-5 ${isWishlisted ? 'fill-current' : ''}`} />
-            </button>
+          <div className="flex flex-col gap-4 mb-8">
+            <div className="flex gap-4">
+              <button
+                onClick={handleAddToCart}
+                disabled={product.stockQuantity === 0}
+                className="flex-1 btn btn-primary flex items-center justify-center gap-2 disabled:opacity-50"
+              >
+                <ShoppingCart className="w-5 h-5" />
+                Add to Cart
+              </button>
+              <button
+                onClick={handleToggleWishlist}
+                className={`p-4 rounded-lg border-2 ${
+                  isWishlisted
+                    ? 'border-red-500 bg-red-50 text-red-600'
+                    : 'border-gray-300 hover:border-primary-400'
+                }`}
+              >
+                <Heart className={`w-5 h-5 ${isWishlisted ? 'fill-current' : ''}`} />
+              </button>
+            </div>
+            {/* AR Button */}
+            {product.rendablePath && (
+              <ARButton
+                productId={product.id.toString()}
+                productName={product.model}
+                textureId={selectedColor?.id?.toString()}
+              />
+            )}
           </div>
 
           {/* Features */}

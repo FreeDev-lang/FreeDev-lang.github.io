@@ -76,18 +76,6 @@ export const productColorsApi = {
   delete: (id: number) => api.delete(`/productcolors/${id}`),
 }
 
-// Product Textures API
-export const productTexturesApi = {
-  getByProduct: (productId: number) => api.get(`/producttextures/product/${productId}`),
-  create: (productId: number, formData: FormData) => api.post(`/producttextures/product/${productId}`, formData, {
-    headers: { 'Content-Type': 'multipart/form-data' },
-  }),
-  update: (id: number, formData: FormData) => api.put(`/producttextures/${id}`, formData, {
-    headers: { 'Content-Type': 'multipart/form-data' },
-  }),
-  delete: (id: number) => api.delete(`/producttextures/${id}`),
-}
-
 // Cart API
 export const cartApi = {
   get: () => api.get('/cart'),
@@ -248,6 +236,13 @@ export const qrCodeApi = {
     params: { size },
     responseType: 'blob' 
   }),
+}
+
+// AR API
+export const arApi = {
+  getProductTextures: (productId: number) => api.get(`/productcolors/product/${productId}`),
+  getProductModel: (productId: number) => api.get(`/furniture/${productId}`),
+  trackARSession: (data: any) => api.post('/ar-sessions', data),
 }
 
 // Setup API (for creating first admin)

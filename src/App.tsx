@@ -32,6 +32,7 @@ import AdminCategories from './pages/AdminCategories'
 import AdminNotifications from './pages/AdminNotifications'
 import AdminSocialMedia from './pages/AdminSocialMedia'
 import SetupAdmin from './pages/SetupAdmin'
+import ARViewerPage from './pages/ARViewerPage'
 import AdminRoute from './components/AdminRoute'
 import ProtectedRoute from './components/ProtectedRoute'
 import Chatbot from './components/Chatbot'
@@ -71,6 +72,7 @@ function App() {
   return (
     <>
       <Routes>
+        <Route path="/ar" element={<ARViewerPage />} />
         <Route path="/" element={<Layout />}>
           <Route index element={<Home />} />
           <Route path="products" element={<Products />} />
