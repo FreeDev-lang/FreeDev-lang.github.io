@@ -272,6 +272,32 @@ export default function ARViewer({
   // Don't block if not supported - let React Three XR handle it
   // The XRButton will show appropriate UI if not supported
 
+  // Suppress XRSession errors globally (React Three XR issue)
+  useEffect(() => {
+    const handleError = (event: ErrorEvent) => {
+      if (event.message?.includes('XRSession has already ended')) {
+        console.warn('XR Session cleanup (safe to ignore)')
+        event.preventDefault()
+      }
+    }
+    
+    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+      const message = event.reason?.message || event.reason?.toString() || ''
+      if (message.includes('XRSession has already ended')) {
+        console.warn('XR Session cleanup (safe to ignore)')
+        event.preventDefault()
+      }
+    }
+    
+    window.addEventListener('error', handleError)
+    window.addEventListener('unhandledrejection', handleUnhandledRejection)
+    
+    return () => {
+      window.removeEventListener('error', handleError)
+      window.removeEventListener('unhandledrejection', handleUnhandledRejection)
+    }
+  }, [])
+
   return (
     <ARErrorBoundary>
       <div 

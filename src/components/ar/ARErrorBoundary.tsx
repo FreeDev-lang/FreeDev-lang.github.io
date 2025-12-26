@@ -21,6 +21,12 @@ export class ARErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: any) {
+    // Suppress XRSession already ended errors - these are harmless
+    if (error.message?.includes('XRSession has already ended') || 
+        error.message?.includes('Failed to execute \'end\' on \'XRSession\'')) {
+      console.warn('XR Session cleanup warning (safe to ignore):', error.message)
+      return
+    }
     console.error('AR Error:', error, errorInfo)
   }
 

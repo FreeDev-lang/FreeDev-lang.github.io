@@ -96,8 +96,15 @@ export default function ARScene({ onSurfaceHit, children }: ARSceneProps) {
             powerPreference: 'high-performance'
           }}
           dpr={[1, Math.min(window.devicePixelRatio, 2)]}
-          onError={(error) => {
-            console.error('Canvas error:', error)
+          onCreated={({ gl }) => {
+            // Handle context lost/restored
+            gl.domElement.addEventListener('webglcontextlost', (e) => {
+              e.preventDefault()
+              console.warn('WebGL context lost')
+            })
+            gl.domElement.addEventListener('webglcontextrestored', () => {
+              console.log('WebGL context restored')
+            })
           }}
           style={{ width: '100%', height: '100%', display: 'block', background: 'transparent' }}
         >
