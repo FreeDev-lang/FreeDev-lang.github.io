@@ -46,7 +46,7 @@ export default function ARScene({ onSurfaceHit, children }: ARSceneProps) {
         mode="AR"
         sessionInit={{
           requiredFeatures: ['local-floor'],
-          optionalFeatures: ['hit-test', 'bounded-floor', 'dom-overlay', 'local'],
+          optionalFeatures: ['hit-test', 'bounded-floor', 'local'],
         }}
         style={{
           position: 'absolute',
