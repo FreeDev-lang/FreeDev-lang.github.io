@@ -323,6 +323,45 @@ export default function ARViewer({
     }
   }, [])
 
+  // Suppress XRSession errors globally (React Three XR issue)
+  useEffect(() => {
+    const handleError = (event: ErrorEvent) => {
+      const errorMsg = event.message || event.error?.message || ''
+      if (errorMsg.includes('XRSession') || errorMsg.includes('Failed to execute \'end\' on \'XRSession\'')) {
+        console.warn('XR Session cleanup (safe to ignore)')
+        event.preventDefault()
+        event.stopPropagation()
+        return true
+      }
+      return false
+    }
+    
+    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+      const reason = event.reason
+      const message = reason?.message || reason?.toString() || event.type || ''
+      const errorString = typeof message === 'string' ? message : JSON.stringify(message)
+      
+      if (errorString.includes('XRSession') || 
+          errorString.includes('Failed to execute') ||
+          errorString.includes('InvalidStateError')) {
+        console.warn('XR Session cleanup (safe to ignore)')
+        event.preventDefault()
+        event.stopPropagation()
+        return true
+      }
+      return false
+    }
+    
+    // Use capturing phase to catch earlier
+    window.addEventListener('error', handleError, true)
+    window.addEventListener('unhandledrejection', handleUnhandledRejection, true)
+    
+    return () => {
+      window.removeEventListener('error', handleError, true)
+      window.removeEventListener('unhandledrejection', handleUnhandledRejection, true)
+    }
+  }, [])
+
   return (
     <ARErrorBoundary>
       <div 
@@ -335,7 +374,8 @@ export default function ARViewer({
           top: 0,
           left: 0,
           right: 0,
-          bottom: 0
+          bottom: 0,
+          backgroundColor: '#000000'
         }}
       >
         {showInstructions && <ARInstructions />}

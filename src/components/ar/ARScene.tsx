@@ -1,5 +1,4 @@
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
-import { Hands } from '@react-three/xr'
 import { Suspense, useState, useEffect } from 'react'
 import type { HitTestResult } from './types/ar.types'
 import { performHitTest, isPlaceableSurface } from './utils/ar-utils'
@@ -49,6 +48,7 @@ function StartARButton() {
   const [error, setError] = useState<string | null>(null)
   const [isSupported, setIsSupported] = useState<boolean | null>(null)
   const [isStarting, setIsStarting] = useState(false)
+  const [sessionActive, setSessionActive] = useState(false)
   
   useEffect(() => {
     // Check WebXR support
@@ -91,33 +91,42 @@ function StartARButton() {
       
       console.log('AR session created:', session)
       
-      // Find the Canvas renderer and set the XR session
+      // Find the Canvas and connect the session
       const canvas = document.querySelector('canvas')
-      if (canvas) {
-        const gl = canvas.getContext('webgl2') || canvas.getContext('webgl')
-        if (gl && (gl as any).makeXRCompatible) {
-          await (gl as any).makeXRCompatible()
-        }
-        
-        // Get the renderer from the canvas (React Three Fiber stores it)
-        const renderer = (canvas as any).__r3f?.gl
-        if (renderer && renderer.xr) {
-          await renderer.xr.setSession(session)
-          console.log('AR session started successfully')
-        } else {
-          // Fallback: try to set session directly on canvas context
-          if ((gl as any).setXRCompatible) {
-            await (gl as any).setXRCompatible()
-          }
-          setError('Could not connect session to renderer')
-        }
-      } else {
-        setError('Canvas not found')
+      if (!canvas) {
+        throw new Error('Canvas not found')
       }
+      
+      const gl = canvas.getContext('webgl2') || canvas.getContext('webgl')
+      if (!gl) {
+        throw new Error('WebGL context not found')
+      }
+      
+      // Make context XR compatible
+      if ((gl as any).makeXRCompatible) {
+        await (gl as any).makeXRCompatible()
+      }
+      
+      // Get the renderer from React Three Fiber
+      const renderer = (canvas as any).__r3f?.gl
+      if (renderer && renderer.xr) {
+        await renderer.xr.setSession(session)
+        setSessionActive(true)
+        console.log('AR session started successfully')
+      } else {
+        throw new Error('Could not connect session to renderer')
+      }
+      
+      // Handle session end
+      session.addEventListener('end', () => {
+        setSessionActive(false)
+        setIsStarting(false)
+        console.log('AR session ended')
+      })
+      
     } catch (err: any) {
       console.error('Error starting AR session:', err)
       setError(err.message || 'Failed to start AR session')
-    } finally {
       setIsStarting(false)
     }
   }
@@ -140,6 +149,10 @@ function StartARButton() {
         {error && <p style={{ fontSize: '14px', color: '#ff6b6b' }}>{error}</p>}
       </div>
     )
+  }
+  
+  if (sessionActive) {
+    return null // Hide button when AR is active
   }
   
   return (
@@ -215,7 +228,6 @@ export default function ARScene({ onSurfaceHit, children }: ARSceneProps) {
         >
           <Suspense fallback={null}>
             <ARBackground />
-            <Hands />
             <ambientLight intensity={0.8} />
             <directionalLight position={[10, 10, 5]} intensity={1} />
             <ARHitTestPlane onSurfaceHit={onSurfaceHit} />

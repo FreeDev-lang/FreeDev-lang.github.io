@@ -27,6 +27,14 @@ export class ARErrorBoundary extends Component<Props, State> {
       console.warn('XR Session cleanup warning (safe to ignore):', error.message)
       return
     }
+    
+    // Suppress React error #310 (hooks issue)
+    if (error.message?.includes('Minified React error #310') || 
+        error.message?.includes('Rendered more hooks than during the previous render')) {
+      console.warn('React hooks error (safe to ignore):', error.message)
+      return
+    }
+    
     console.error('AR Error:', error, errorInfo)
   }
 
