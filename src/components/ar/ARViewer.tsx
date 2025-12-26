@@ -315,7 +315,8 @@ export default function ARViewer({
           top: 0, 
           left: 0,
           right: 0,
-          bottom: 0
+          bottom: 0,
+          backgroundColor: '#000'
         }}>
           <ARScene onSurfaceHit={handleSurfaceHit}>
             <ARObjectManager
@@ -327,13 +328,16 @@ export default function ARViewer({
           </ARScene>
         </div>
 
-        <ARControls
-          onClose={onClose}
-          onAddProduct={() => setShowProductPicker(true)}
-          onChangeTexture={() => setShowTextureSelector(true)}
-          onAddToCart={handleAddToCart}
-          hasSelectedObject={!!selectedObjectId}
-        />
+        {/* Only show controls when AR is active */}
+        {placedObjects.length > 0 && (
+          <ARControls
+            onClose={onClose}
+            onAddProduct={() => setShowProductPicker(true)}
+            onChangeTexture={() => setShowTextureSelector(true)}
+            onAddToCart={handleAddToCart}
+            hasSelectedObject={!!selectedObjectId}
+          />
+        )}
       </div>
     </ARErrorBoundary>
   )
