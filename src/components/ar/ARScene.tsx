@@ -1,9 +1,8 @@
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
-import { Hands, useXR } from '@react-three/xr'
-import { Suspense, useState, useEffect, useRef } from 'react'
+import { Hands } from '@react-three/xr'
+import { Suspense, useState, useEffect } from 'react'
 import type { HitTestResult } from './types/ar.types'
 import { performHitTest, isPlaceableSurface } from './utils/ar-utils'
-import * as THREE from 'three'
 
 interface ARSceneProps {
   onSurfaceHit: (hit: HitTestResult) => void
@@ -12,11 +11,8 @@ interface ARSceneProps {
 
 function ARHitTestPlane({ onSurfaceHit }: { onSurfaceHit: (hit: HitTestResult) => void }) {
   const { gl } = useThree()
-  const { isPresenting } = useXR()
 
   useFrame(() => {
-    if (!isPresenting) return
-
     try {
       const xrFrame = (gl.xr as any)?.getFrame?.()
       if (!xrFrame) return
@@ -49,9 +45,9 @@ function ARBackground() {
   return null
 }
 
-function StartARButton({ glRef }: { glRef: React.MutableRefObject<THREE.WebGLRenderer | null> }) {
+function StartARButton() {
   const [error, setError] = useState<string | null>(null)
-  const [isSupported, setIsSupported] = useState<boolean | null>(null) as [boolean | null, (value: boolean | null) => void]
+  const [isSupported, setIsSupported] = useState<boolean | null>(null)
   const [isStarting, setIsStarting] = useState(false)
   
   useEffect(() => {
@@ -79,8 +75,8 @@ function StartARButton({ glRef }: { glRef: React.MutableRefObject<THREE.WebGLRen
   }, [])
   
   const handleStartAR = async () => {
-    if (!navigator.xr || !glRef.current) {
-      setError('WebXR or WebGL not available')
+    if (!navigator.xr) {
+      setError('WebXR not available')
       return
     }
     
@@ -95,18 +91,38 @@ function StartARButton({ glRef }: { glRef: React.MutableRefObject<THREE.WebGLRen
       
       console.log('AR session created:', session)
       
-      // Set up the XR session on the WebGL renderer
-      await glRef.current.xr.setSession(session)
-      
-      console.log('AR session started successfully')
+      // Find the Canvas renderer and set the XR session
+      const canvas = document.querySelector('canvas')
+      if (canvas) {
+        const gl = canvas.getContext('webgl2') || canvas.getContext('webgl')
+        if (gl && (gl as any).makeXRCompatible) {
+          await (gl as any).makeXRCompatible()
+        }
+        
+        // Get the renderer from the canvas (React Three Fiber stores it)
+        const renderer = (canvas as any).__r3f?.gl
+        if (renderer && renderer.xr) {
+          await renderer.xr.setSession(session)
+          console.log('AR session started successfully')
+        } else {
+          // Fallback: try to set session directly on canvas context
+          if ((gl as any).setXRCompatible) {
+            await (gl as any).setXRCompatible()
+          }
+          setError('Could not connect session to renderer')
+        }
+      } else {
+        setError('Canvas not found')
+      }
     } catch (err: any) {
       console.error('Error starting AR session:', err)
       setError(err.message || 'Failed to start AR session')
+    } finally {
       setIsStarting(false)
     }
   }
   
-  if (isSupported === false || isSupported === null) {
+  if (isSupported === false) {
     return (
       <div style={{
         position: 'absolute',
@@ -166,29 +182,26 @@ function StartARButton({ glRef }: { glRef: React.MutableRefObject<THREE.WebGLRen
 }
 
 export default function ARScene({ onSurfaceHit, children }: ARSceneProps) {
-  const glRef = useRef<THREE.WebGLRenderer | null>(null)
-  
   return (
     <>
       {/* Manual AR button */}
-      <StartARButton glRef={glRef} />
+      <StartARButton />
       
       <div style={{ width: '100%', height: '100%', position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
         <Canvas
           camera={{ position: [0, 1.6, 0], fov: 75 }}
-          gl={(canvas) => {
-            const renderer = new THREE.WebGLRenderer({
-              canvas,
-              antialias: true,
-              alpha: true,
-              preserveDrawingBuffer: true,
-              powerPreference: 'high-performance',
-            })
-            glRef.current = renderer
-            return renderer
+          gl={{ 
+            antialias: true, 
+            alpha: true, 
+            preserveDrawingBuffer: true,
+            powerPreference: 'high-performance'
           }}
           dpr={[1, Math.min(window.devicePixelRatio, 2)]}
           onCreated={({ gl }) => {
+            // Store renderer reference on canvas for access from button
+            const canvas = gl.domElement
+            ;(canvas as any).__r3f = { gl }
+            
             // Handle context lost/restored
             gl.domElement.addEventListener('webglcontextlost', (e) => {
               e.preventDefault()
