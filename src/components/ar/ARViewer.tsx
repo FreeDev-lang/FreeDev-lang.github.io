@@ -275,26 +275,51 @@ export default function ARViewer({
   // Suppress XRSession errors globally (React Three XR issue)
   useEffect(() => {
     const handleError = (event: ErrorEvent) => {
-      if (event.message?.includes('XRSession has already ended')) {
+      const errorMsg = event.message || event.error?.message || ''
+      if (errorMsg.includes('XRSession') || errorMsg.includes('Failed to execute \'end\' on \'XRSession\'')) {
         console.warn('XR Session cleanup (safe to ignore)')
         event.preventDefault()
+        event.stopPropagation()
+        return true
       }
+      return false
     }
     
     const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
-      const message = event.reason?.message || event.reason?.toString() || ''
-      if (message.includes('XRSession has already ended')) {
+      const reason = event.reason
+      const message = reason?.message || reason?.toString() || event.type || ''
+      const errorString = typeof message === 'string' ? message : JSON.stringify(message)
+      
+      if (errorString.includes('XRSession') || 
+          errorString.includes('Failed to execute') ||
+          errorString.includes('InvalidStateError')) {
         console.warn('XR Session cleanup (safe to ignore)')
         event.preventDefault()
+        event.stopPropagation()
+        return true
       }
+      return false
     }
     
-    window.addEventListener('error', handleError)
-    window.addEventListener('unhandledrejection', handleUnhandledRejection)
+    // Use capturing phase to catch earlier
+    window.addEventListener('error', handleError, true)
+    window.addEventListener('unhandledrejection', handleUnhandledRejection, true)
+    
+    // Also override console.error temporarily to filter these
+    const originalConsoleError = console.error
+    console.error = (...args: any[]) => {
+      const errorString = args.join(' ')
+      if (errorString.includes('XRSession') || errorString.includes('InvalidStateError')) {
+        console.warn('XR Session cleanup (suppressed)')
+        return
+      }
+      originalConsoleError.apply(console, args)
+    }
     
     return () => {
-      window.removeEventListener('error', handleError)
-      window.removeEventListener('unhandledrejection', handleUnhandledRejection)
+      window.removeEventListener('error', handleError, true)
+      window.removeEventListener('unhandledrejection', handleUnhandledRejection, true)
+      console.error = originalConsoleError
     }
   }, [])
 
