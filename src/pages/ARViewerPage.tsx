@@ -12,7 +12,6 @@ export default function ARViewerPage() {
   const navigate = useNavigate()
   const { isMobile } = useDeviceDetect()
   const { isAuthenticated } = useAuthStore()
-  const deviceInfo = useDeviceDetect()
   
   const productId = searchParams.get('productId')
   const textureId = searchParams.get('textureId') || undefined
@@ -51,49 +50,13 @@ export default function ARViewerPage() {
     }
   }
 
-  // Loading state
-  if (loading) {
-    return (
-      <div className="fixed inset-0 z-50 bg-black flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto" />
-          <p className="mt-4 text-white">Loading...</p>
-        </div>
-      </div>
-    )
-  }
-
-  // Error state
-  if (error || !productId) {
+  // Validate productId
+  if (!productId) {
     return (
       <div className="fixed inset-0 z-50 bg-white flex items-center justify-center">
         <div className="text-center p-6">
-          <h2 className="text-2xl font-bold mb-4">
-            {error || 'Invalid Product'}
-          </h2>
-          <p className="text-gray-600 mb-6">
-            {error ? 'Please try again later' : 'No product ID provided'}
-          </p>
-          <button
-            onClick={handleClose}
-            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            Go Back
-          </button>
-        </div>
-      </div>
-    )
-  }
-
-  // No model available
-  if (!product?.modelUrl) {
-    return (
-      <div className="fixed inset-0 z-50 bg-white flex items-center justify-center">
-        <div className="text-center p-6">
-          <h2 className="text-2xl font-bold mb-4">3D Model Not Available</h2>
-          <p className="text-gray-600 mb-6">
-            This product doesn't have a 3D model for AR viewing.
-          </p>
+          <h2 className="text-2xl font-bold mb-4">Invalid Product</h2>
+          <p className="text-gray-600 mb-6">No product ID provided</p>
           <button
             onClick={handleClose}
             className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700"
