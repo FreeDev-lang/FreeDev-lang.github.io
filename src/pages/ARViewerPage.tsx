@@ -12,6 +12,8 @@ export default function ARViewerPage() {
   const navigate = useNavigate()
   const { isMobile } = useDeviceDetect()
   const { isAuthenticated } = useAuthStore()
+  const deviceInfo = useDeviceDetect()
+  
   const productId = searchParams.get('productId')
   const textureId = searchParams.get('textureId') || undefined
   const modelUrl = searchParams.get('modelUrl') || undefined
@@ -20,7 +22,7 @@ export default function ARViewerPage() {
     navigate(-1)
   }
 
-  const handleAddToCart = async (items: CartItem[]) => {
+  const handleAddToCart = async (items?: CartItem[]) => {
     if (!isAuthenticated()) {
       toast.error('Please sign in to add items to cart')
       navigate('/login')
@@ -28,24 +30,70 @@ export default function ARViewerPage() {
     }
 
     try {
-      for (const item of items) {
+      if (items && items.length > 0) {
+        for (const item of items) {
+          await cartApi.add({
+            furnitureItemId: Number(item.productId),
+            quantity: item.quantity,
+          })
+        }
+      } else if (productId) {
+        // Add current product
         await cartApi.add({
-          furnitureItemId: Number(item.productId),
-          quantity: item.quantity,
+          furnitureItemId: Number(productId),
+          quantity: 1,
         })
       }
       toast.success('Added to cart!')
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to add to cart')
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } }
+      toast.error(err.response?.data?.message || 'Failed to add to cart')
     }
   }
 
-  if (!productId) {
+  // Loading state
+  if (loading) {
+    return (
+      <div className="fixed inset-0 z-50 bg-black flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto" />
+          <p className="mt-4 text-white">Loading...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Error state
+  if (error || !productId) {
     return (
       <div className="fixed inset-0 z-50 bg-white flex items-center justify-center">
         <div className="text-center p-6">
-          <h2 className="text-2xl font-bold mb-4">Invalid Product</h2>
-          <p className="text-gray-600 mb-6">No product ID provided</p>
+          <h2 className="text-2xl font-bold mb-4">
+            {error || 'Invalid Product'}
+          </h2>
+          <p className="text-gray-600 mb-6">
+            {error ? 'Please try again later' : 'No product ID provided'}
+          </p>
+          <button
+            onClick={handleClose}
+            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Go Back
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  // No model available
+  if (!product?.modelUrl) {
+    return (
+      <div className="fixed inset-0 z-50 bg-white flex items-center justify-center">
+        <div className="text-center p-6">
+          <h2 className="text-2xl font-bold mb-4">3D Model Not Available</h2>
+          <p className="text-gray-600 mb-6">
+            This product doesn't have a 3D model for AR viewing.
+          </p>
           <button
             onClick={handleClose}
             className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700"
@@ -78,4 +126,3 @@ export default function ARViewerPage() {
     />
   )
 }
-
