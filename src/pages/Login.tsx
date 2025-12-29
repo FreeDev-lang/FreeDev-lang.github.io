@@ -3,7 +3,9 @@ import { useForm } from 'react-hook-form'
 import { authApi } from '../lib/api'
 import { useAuthStore } from '../store/authStore'
 import toast from 'react-hot-toast'
-import { Share2 } from 'lucide-react'
+import GoogleLoginButton from '../components/auth/GoogleLoginButton'
+import FacebookLoginButton from '../components/auth/FacebookLoginButton'
+import InstagramLoginButton from '../components/auth/InstagramLoginButton'
 
 export default function Login() {
   const navigate = useNavigate()
@@ -21,48 +23,6 @@ export default function Login() {
     }
   }
 
-  const handleSocialLogin = async (provider: string) => {
-    try {
-      // In production, you would:
-      // 1. Open OAuth popup
-      // 2. Get user info from OAuth provider
-      // 3. Send to backend
-      
-      // For now, we'll use a simplified flow where user manually enters info
-      // In production, replace this with actual OAuth flow
-      
-      // Mock OAuth flow - in production use actual OAuth libraries
-      // Note: This is a placeholder for actual OAuth implementation
-      // const mockUserInfo = {
-      //   provider,
-      //   providerId: `mock_${provider.toLowerCase()}_${Date.now()}`,
-      //   email: `user@${provider.toLowerCase()}.com`,
-      //   firstName: 'John',
-      //   lastName: 'Doe',
-      //   profilePictureUrl: null
-      // }
-      
-      // For demo purposes, we'll prompt for email
-      const email = prompt(`Enter your ${provider} email:`)
-      if (!email) return
-      
-      const socialData = {
-        provider,
-        providerId: `social_${provider.toLowerCase()}_${Date.now()}`,
-        email,
-        firstName: prompt('Enter your first name:') || 'User',
-        lastName: prompt('Enter your last name:') || '',
-        profilePictureUrl: null
-      }
-      
-      const response = await authApi.socialLogin(socialData)
-      setAuth(response.data.user, response.data.token)
-      toast.success(`Signed in with ${provider}`)
-      navigate('/')
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || `Failed to sign in with ${provider}`)
-    }
-  }
 
   const handleGuestLogin = async () => {
     try {
@@ -135,31 +95,10 @@ export default function Login() {
               </div>
             </div>
 
-            <div className="mt-6 grid grid-cols-3 gap-3">
-              <button
-                onClick={() => handleSocialLogin('Google')}
-                className="flex flex-col items-center justify-center px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-                title="Google"
-              >
-                <span className="text-lg mb-1">G</span>
-                <span className="text-xs text-gray-600">Google</span>
-              </button>
-              <button
-                onClick={() => handleSocialLogin('Facebook')}
-                className="flex flex-col items-center justify-center px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-                title="Facebook"
-              >
-                <span className="text-lg mb-1">f</span>
-                <span className="text-xs text-gray-600">Facebook</span>
-              </button>
-              <button
-                onClick={() => handleSocialLogin('Instagram')}
-                className="flex flex-col items-center justify-center px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-                title="Instagram"
-              >
-                <Share2 className="w-5 h-5 mb-1" />
-                <span className="text-xs text-gray-600">Instagram</span>
-              </button>
+            <div className="mt-6 space-y-3">
+              <GoogleLoginButton />
+              <FacebookLoginButton />
+              <InstagramLoginButton />
             </div>
           </div>
 

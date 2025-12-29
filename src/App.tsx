@@ -31,8 +31,11 @@ import AdminPlatform from './pages/AdminPlatform'
 import AdminCategories from './pages/AdminCategories'
 import AdminNotifications from './pages/AdminNotifications'
 import AdminSocialMedia from './pages/AdminSocialMedia'
+import AdminStores from './pages/AdminStores'
 import SetupAdmin from './pages/SetupAdmin'
 import ARViewerPage from './pages/ARViewerPage'
+import Stores from './pages/Stores'
+import StoreDetail from './pages/StoreDetail'
 import AdminRoute from './components/AdminRoute'
 import ProtectedRoute from './components/ProtectedRoute'
 import Chatbot from './components/Chatbot'
@@ -77,6 +80,8 @@ function App() {
           <Route index element={<Home />} />
           <Route path="products" element={<Products />} />
           <Route path="products/:id" element={<ProductDetail />} />
+          <Route path="stores" element={<Stores />} />
+          <Route path="stores/:slug" element={<StoreDetail />} />
           <Route path="cart" element={<Cart />} />
           <Route path="checkout" element={<ProtectedRoute><Checkout /></ProtectedRoute>} />
           <Route path="login" element={<Login />} />
@@ -103,6 +108,7 @@ function App() {
           <Route path="activity-logs" element={<AdminActivityLogs />} />
           <Route path="users" element={<AdminUsers />} />
           <Route path="platform" element={<AdminPlatform />} />
+          <Route path="stores" element={<AdminStores />} />
         </Route>
       </Routes>
       <Toaster position="top-right" />

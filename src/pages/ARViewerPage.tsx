@@ -1,16 +1,20 @@
 import { useSearchParams, useNavigate } from 'react-router-dom'
-import { cartApi } from '../lib/api'
-import { useAuthStore } from '../store/authStore'
+import { useDeviceDetect } from '../components/ar/hooks/useDeviceDetect'
 import ARViewer from '../components/ar/ARViewer'
+import MobileARViewer from '../components/ar/MobileARViewer'
 import type { CartItem } from '../components/ar/types/ar.types'
 import toast from 'react-hot-toast'
+import { cartApi } from '../lib/api'
+import { useAuthStore } from '../store/authStore'
 
 export default function ARViewerPage() {
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
+  const { isMobile } = useDeviceDetect()
   const { isAuthenticated } = useAuthStore()
   const productId = searchParams.get('productId')
   const textureId = searchParams.get('textureId') || undefined
+  const modelUrl = searchParams.get('modelUrl') || undefined
 
   const handleClose = () => {
     navigate(-1)
@@ -44,12 +48,24 @@ export default function ARViewerPage() {
           <p className="text-gray-600 mb-6">No product ID provided</p>
           <button
             onClick={handleClose}
-            className="px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
+            className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700"
           >
             Go Back
           </button>
         </div>
       </div>
+    )
+  }
+
+  // Use MobileARViewer for mobile devices (Google model-viewer)
+  // Use ARViewer for desktop (React Three Fiber with WebXR)
+  if (isMobile) {
+    return (
+      <MobileARViewer
+        productId={productId}
+        modelUrl={modelUrl}
+        onClose={handleClose}
+      />
     )
   }
 

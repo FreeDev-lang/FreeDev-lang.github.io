@@ -1,13 +1,15 @@
 import { useParams, Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
-import { productsApi, cartApi, wishlistApi, reviewsApi, qrCodeApi } from '../lib/api'
-import { ShoppingCart, Heart, Star, ArrowLeft, Package, Truck, QrCode } from 'lucide-react'
+import { productsApi, cartApi, wishlistApi, reviewsApi } from '../lib/api'
+import { ShoppingCart, Heart, Star, ArrowLeft, Package, Truck, QrCode, Box } from 'lucide-react'
 import { useAuthStore } from '../store/authStore'
 import toast from 'react-hot-toast'
 import { useQueryClient } from '@tanstack/react-query'
 import { useCurrency } from '../utils/currency'
-import ARButton from '../components/ar/ARButton'
+import ARQRCode from '../components/ar/ARQRCode'
+import ModelViewer3D from '../components/ar/ModelViewer3D'
+import { useDeviceDetect } from '../components/ar/hooks/useDeviceDetect'
 
 export default function ProductDetail() {
   const { id } = useParams()
@@ -15,10 +17,11 @@ export default function ProductDetail() {
   const [quantity, setQuantity] = useState(1)
   const [isWishlisted, setIsWishlisted] = useState(false)
   const [showQRCode, setShowQRCode] = useState(false)
-  const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null)
   const { isAuthenticated } = useAuthStore()
   const { formatCurrency } = useCurrency()
   const queryClient = useQueryClient()
+  const { isDesktop } = useDeviceDetect()
+  const [show3DViewer, setShow3DViewer] = useState(false)
 
   const { data: product, isLoading } = useQuery({
     queryKey: ['product', id],
@@ -87,29 +90,57 @@ export default function ProductDetail() {
       </Link>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Images */}
+        {/* Images / 3D Viewer */}
         <div>
-          <div className="aspect-square rounded-xl overflow-hidden bg-gray-100 mb-4">
-            {product.images && product.images.length > 0 ? (
-              <img
-                src={product.images[0]}
-                alt={product.model}
-                className="w-full h-full object-cover"
+          {/* Desktop: Show 3D Viewer if model available, otherwise show images */}
+          {isDesktop && product.rendablePath && show3DViewer ? (
+            <div className="aspect-square rounded-xl overflow-hidden bg-gray-100 mb-4 relative">
+              <ModelViewer3D 
+                modelUrl={product.rendablePath} 
+                className="w-full h-full"
               />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center text-gray-400">
-                No Image
-              </div>
-            )}
-          </div>
-          {product.images && product.images.length > 1 && (
-            <div className="grid grid-cols-4 gap-2">
-              {product.images.slice(1, 5).map((img: string, idx: number) => (
-                <div key={idx} className="aspect-square rounded-lg overflow-hidden bg-gray-100">
-                  <img src={img} alt={`${product.model} ${idx + 2}`} className="w-full h-full object-cover" />
-                </div>
-              ))}
+              <button
+                onClick={() => setShow3DViewer(false)}
+                className="absolute top-4 right-4 bg-white px-4 py-2 rounded-lg shadow-md hover:bg-gray-50 transition-colors z-10"
+              >
+                View Images
+              </button>
             </div>
+          ) : (
+            <>
+              <div className="aspect-square rounded-xl overflow-hidden bg-[#F5F5F5] mb-4 relative">
+                {product.images && product.images.length > 0 ? (
+                  <img
+                    src={product.images[0]}
+                    alt={product.model}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-gray-400">
+                    No Image
+                  </div>
+                )}
+                {/* 3D View Toggle Button (Desktop only) */}
+                {isDesktop && product.rendablePath && (
+                  <button
+                    onClick={() => setShow3DViewer(true)}
+                    className="absolute bottom-4 right-4 bg-green-600 text-white px-4 py-2 rounded-lg shadow-lg hover:bg-green-700 transition-colors flex items-center gap-2"
+                  >
+                    <Box className="w-5 h-5" />
+                    View 3D Model
+                  </button>
+                )}
+              </div>
+              {product.images && product.images.length > 1 && (
+                <div className="grid grid-cols-4 gap-2">
+                  {product.images.slice(1, 5).map((img: string, idx: number) => (
+                    <div key={idx} className="aspect-square rounded-lg overflow-hidden bg-gray-100">
+                      <img src={img} alt={`${product.model} ${idx + 2}`} className="w-full h-full object-cover" />
+                    </div>
+                  ))}
+                </div>
+              )}
+            </>
           )}
         </div>
 
@@ -144,39 +175,28 @@ export default function ProductDetail() {
             )}
           </div>
 
-          {/* QR Code */}
-          <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="font-semibold text-gray-900 mb-1">Share Product</h3>
-                <p className="text-sm text-gray-600">Scan QR code to view on mobile</p>
-              </div>
-              <button
-                onClick={async () => {
-                  try {
-                    const response = await qrCodeApi.getProductQRCode(product.id, 200)
-                    const url = URL.createObjectURL(response.data)
-                    setQrCodeUrl(url)
-                    setShowQRCode(true)
-                  } catch (error) {
-                    toast.error('Failed to generate QR code')
-                  }
-                }}
-                className="p-2 bg-white rounded-lg border border-gray-300 hover:bg-gray-50"
-                title="Generate QR Code"
-              >
-                <QrCode className="w-6 h-6 text-gray-600" />
-              </button>
+          {/* AR / QR Code Section */}
+          {product.rendablePath && (
+            <div className="mb-6">
+              {isDesktop ? (
+                <button
+                  onClick={() => setShowQRCode(true)}
+                  className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
+                >
+                  <QrCode className="w-5 h-5" />
+                  Show QR Code for Mobile AR
+                </button>
+              ) : (
+                <Link
+                  to={`/ar?productId=${product.id}${selectedColor?.id ? `&textureId=${selectedColor.id}` : ''}`}
+                  className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
+                >
+                  <Box className="w-5 h-5" />
+                  View in Your Space (AR)
+                </Link>
+              )}
             </div>
-            {showQRCode && qrCodeUrl && (
-              <div className="mt-4 flex justify-center">
-                <div className="p-4 bg-white rounded-lg">
-                  <img src={qrCodeUrl} alt="QR Code" className="w-48 h-48" />
-                  <p className="text-xs text-center text-gray-600 mt-2">Scan to view product</p>
-                </div>
-              </div>
-            )}
-          </div>
+          )}
 
           {/* Available Colors */}
           {product.availableColors && product.availableColors.length > 0 && (
@@ -272,14 +292,6 @@ export default function ProductDetail() {
                 <Heart className={`w-5 h-5 ${isWishlisted ? 'fill-current' : ''}`} />
               </button>
             </div>
-            {/* AR Button */}
-            {product.rendablePath && (
-              <ARButton
-                productId={product.id.toString()}
-                productName={product.model}
-                textureId={selectedColor?.id?.toString()}
-              />
-            )}
           </div>
 
           {/* Features */}
@@ -348,6 +360,16 @@ export default function ProductDetail() {
             ))}
           </div>
         </div>
+      )}
+
+      {/* QR Code Modal for Desktop */}
+      {showQRCode && isDesktop && product.rendablePath && (
+        <ARQRCode
+          productId={product.id}
+          productName={product.model}
+          modelUrl={product.rendablePath}
+          onClose={() => setShowQRCode(false)}
+        />
       )}
     </div>
   )

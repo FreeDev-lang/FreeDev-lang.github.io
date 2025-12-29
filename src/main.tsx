@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import App from './App.tsx'
+import GoogleOAuthWrapper from './components/auth/GoogleOAuthWrapper.tsx'
 import './index.css'
 
 // Suppress harmless XRSession cleanup errors from React Three XR
@@ -42,11 +43,13 @@ const queryClient = new QueryClient({
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <QueryClientProvider client={queryClient}>
-      <BrowserRouter basename={import.meta.env.BASE_URL}>
-        <App />
-      </BrowserRouter>
-    </QueryClientProvider>
+    <GoogleOAuthWrapper>
+      <QueryClientProvider client={queryClient}>
+        <BrowserRouter basename={import.meta.env.BASE_URL} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+          <App />
+        </BrowserRouter>
+      </QueryClientProvider>
+    </GoogleOAuthWrapper>
   </React.StrictMode>,
 )
 

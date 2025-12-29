@@ -38,7 +38,13 @@ export const authApi = {
   register: (data: any) => api.post('/auth/register', data),
   login: (data: any) => api.post('/auth/login', data),
   socialLogin: (data: any) => api.post('/auth/social-login', data),
+  googleLogin: (data: any) => api.post('/auth/google', data),
+  facebookLogin: (data: any) => api.post('/auth/facebook', data),
+  instagramLogin: (data: any) => api.post('/auth/instagram', data),
   verifySocialLogin: (data: any) => api.post('/auth/social-login/verify', data),
+  linkSocialAccount: (data: any) => api.post('/auth/social/link', data),
+  unlinkSocialAccount: (provider: string) => api.post('/auth/social/unlink', { provider }),
+  getLinkedAccounts: () => api.get('/auth/social/accounts'),
   createGuest: () => api.post('/auth/guest'),
   getMe: () => api.get('/auth/me'),
   updateMe: (data: any) => api.put('/auth/me', data),
@@ -131,6 +137,17 @@ export const adminApi = {
   removeAdmin: (id: number) => api.post(`/admin/users/${id}/remove-admin`),
   makeSuperAdmin: (id: number) => api.post(`/admin/users/${id}/make-super-admin`),
   removeSuperAdmin: (id: number) => api.post(`/admin/users/${id}/remove-super-admin`),
+  // Store Management
+  getAllStores: (params?: { status?: string; city?: string; country?: string }) => 
+    api.get('/admin/stores', { params }),
+  getPendingStores: () => api.get('/admin/stores/pending'),
+  createStore: (data: any, ownerId: number) => api.post(`/admin/stores?ownerId=${ownerId}`, data),
+  updateStore: (id: number, data: any) => api.put(`/admin/stores/${id}`, data),
+  updateStoreStatus: (id: number, status: string) => api.put(`/admin/stores/${id}/status`, { status }),
+  getStoreStats: (id: number) => api.get(`/admin/stores/${id}/stats`),
+  addStoreAdmin: (id: number, data: any) => api.post(`/admin/stores/${id}/admins`, data),
+  removeStoreAdmin: (id: number, adminUserId: number) => 
+    api.delete(`/admin/stores/${id}/admins/${adminUserId}`),
 }
 
 // Inventory API
@@ -256,5 +273,32 @@ export const notificationsApi = {
   sendNotification: (data: any) => api.post('/notifications/send', data),
   sendToUser: (userId: number, data: any) => api.post(`/notifications/send-to-user/${userId}`, data),
   sendToAll: (data: any) => api.post('/notifications/send-to-all', data),
+}
+
+// Stores API (Public)
+export const storesApi = {
+  getAll: (params?: { status?: string; city?: string; country?: string }) => 
+    api.get('/stores', { params }),
+  getBySlug: (slug: string) => api.get(`/stores/${slug}`),
+  getById: (id: number) => api.get(`/stores/id/${id}`),
+  getProducts: (id: number) => api.get(`/stores/${id}/products`),
+  getLocations: (id: number) => api.get(`/stores/${id}/locations`),
+  getCustomization: (id: number) => api.get(`/stores/${id}/customization`),
+}
+
+// Store Admin API
+export const storeAdminApi = {
+  getDashboard: (storeId: number) => api.get(`/store-admin/dashboard?storeId=${storeId}`),
+  updateProfile: (storeId: number, data: any) => api.put(`/store-admin/profile?storeId=${storeId}`, data),
+  addLocation: (storeId: number, data: any) => api.post(`/store-admin/locations?storeId=${storeId}`, data),
+  updateLocation: (storeId: number, posId: number, data: any) => 
+    api.put(`/store-admin/locations/${posId}?storeId=${storeId}`, data),
+  deleteLocation: (storeId: number, posId: number) => 
+    api.delete(`/store-admin/locations/${posId}?storeId=${storeId}`),
+  getLocations: (storeId: number) => api.get(`/store-admin/locations?storeId=${storeId}`),
+  updateCustomization: (storeId: number, data: any) => 
+    api.put(`/store-admin/customization?storeId=${storeId}`, data),
+  getOrders: (storeId: number) => api.get(`/store-admin/orders?storeId=${storeId}`),
+  getAnalytics: (storeId: number) => api.get(`/store-admin/analytics?storeId=${storeId}`),
 }
 
