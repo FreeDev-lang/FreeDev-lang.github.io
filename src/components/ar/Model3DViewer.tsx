@@ -12,6 +12,7 @@ interface Model3DViewerProps {
     height: number
     depth: number
   }
+  enableAR?: boolean // Enable AR mode (for mobile)
   onClose?: () => void
   onAddToCart?: () => void
 }
@@ -39,6 +40,8 @@ declare global {
         'ar'?: boolean
         'ar-modes'?: string
         'ar-scale'?: string
+        'ar-placement'?: string
+        'xr-environment'?: boolean
         'shadow-intensity'?: string
         'environment-image'?: string
         'exposure'?: string
@@ -53,6 +56,7 @@ export default function Model3DViewer({
   productName,
   productId,
   dimensions,
+  enableAR = false,
   onClose,
   onAddToCart 
 }: Model3DViewerProps) {
@@ -268,7 +272,7 @@ export default function Model3DViewer({
             ref={modelViewerRef}
             src={currentModelUrl}
             alt={productName}
-            auto-rotate
+            auto-rotate={!enableAR}
             camera-controls
             touch-action="none"
             interaction-policy="allow-when-focused"
@@ -276,6 +280,11 @@ export default function Model3DViewer({
             shadow-intensity="1"
             environment-image="neutral"
             exposure="1"
+            ar={enableAR}
+            ar-modes={enableAR ? "webxr scene-viewer quick-look" : undefined}
+            ar-scale={enableAR ? "auto" : undefined}
+            ar-placement={enableAR ? "floor" : undefined}
+            xr-environment={enableAR}
             style={{
               width: '100%',
               height: '100%',

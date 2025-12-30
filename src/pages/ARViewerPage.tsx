@@ -1,6 +1,6 @@
 import { useSearchParams, useNavigate } from 'react-router-dom'
-import ARViewer from '../components/ar/ARViewer'
 import Model3DViewer from '../components/ar/Model3DViewer'
+import { useDeviceDetect } from '../components/ar/hooks/useDeviceDetect'
 import type { CartItem } from '../components/ar/types/ar.types'
 import toast from 'react-hot-toast'
 import { cartApi } from '../lib/api'
@@ -10,9 +10,9 @@ export default function ARViewerPage() {
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
   const { isAuthenticated } = useAuthStore()
+  const { isMobile } = useDeviceDetect()
   
   const productId = searchParams.get('productId')
-  const textureId = searchParams.get('textureId') || undefined
   const modelUrl = searchParams.get('modelUrl') || undefined
 
   const handleClose = () => {
@@ -69,27 +69,37 @@ export default function ARViewerPage() {
   // Check if user wants 3D viewer mode (not AR)
   const mode = searchParams.get('mode')
   
-  // Use Model3DViewer only if explicitly requested (mode=3d)
-  // Otherwise use ARViewer for the actual AR experience
-  if (mode === '3d' && modelUrl) {
+  // For mobile: Use Model3DViewer with AR enabled (model-viewer's built-in AR)
+  // For desktop: Use Model3DViewer without AR (3D preview only)
+  // If mode=3d is specified, disable AR even on mobile
+  const enableAR = isMobile && mode !== '3d' && !!modelUrl
+  
+  if (modelUrl) {
     return (
       <Model3DViewer
         modelUrl={modelUrl}
         productName="Product"
         productId={productId}
+        enableAR={enableAR}
         onClose={handleClose}
         onAddToCart={() => handleAddToCart()}
       />
     )
   }
 
-  // Default: Use ARViewer for WebXR AR experience
+  // Fallback: If no modelUrl, show error
   return (
-    <ARViewer
-      initialProductId={productId}
-      initialTextureId={textureId}
-      onClose={handleClose}
-      onAddToCart={handleAddToCart}
-    />
+    <div className="fixed inset-0 z-50 bg-white flex items-center justify-center">
+      <div className="text-center p-6">
+        <h2 className="text-2xl font-bold mb-4">No 3D Model Available</h2>
+        <p className="text-gray-600 mb-6">This product doesn't have a 3D model.</p>
+        <button
+          onClick={handleClose}
+          className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+        >
+          Go Back
+        </button>
+      </div>
+    </div>
   )
 }

@@ -9,6 +9,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { useCurrency } from '../utils/currency'
 import Model3DViewer from '../components/ar/Model3DViewer'
 import ARButton from '../components/ar/ARButton'
+import { useDeviceDetect } from '../components/ar/hooks/useDeviceDetect'
 
 export default function ProductDetail() {
   const { id } = useParams()
@@ -18,6 +19,7 @@ export default function ProductDetail() {
   const { isAuthenticated } = useAuthStore()
   const { formatCurrency } = useCurrency()
   const queryClient = useQueryClient()
+  const { isDesktop } = useDeviceDetect()
   const [show3DViewer, setShow3DViewer] = useState(false)
 
   const { data: product, isLoading } = useQuery({
@@ -156,7 +158,19 @@ export default function ProductDetail() {
 
           {/* AR / QR Code Section */}
           {product.rendablePath && (
-            <div className="mb-6">
+            <div className="mb-6 space-y-3">
+              {/* Desktop: Show 3D Preview Button */}
+              {isDesktop && (
+                <button
+                  onClick={() => setShow3DViewer(true)}
+                  className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
+                >
+                  <Box className="w-5 h-5" />
+                  View 3D Model
+                </button>
+              )}
+              
+              {/* AR Button - Shows QR code on desktop, AR on mobile */}
               <ARButton
                 productId={product.id.toString()}
                 productName={product.model}
