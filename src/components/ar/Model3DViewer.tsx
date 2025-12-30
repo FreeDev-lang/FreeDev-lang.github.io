@@ -51,6 +51,12 @@ export default function Model3DViewer({
   onAddToCart,
   onViewInSpace
 }: Model3DViewerProps) {
+  // Debug: Log button visibility
+  useEffect(() => {
+    if (showARButton) {
+      console.log('AR Button should be visible:', { showARButton, hasOnViewInSpace: !!onViewInSpace })
+    }
+  }, [showARButton, onViewInSpace])
   const modelViewerRef = useRef<HTMLElement & {
     cameraOrbit?: string
     fieldOfView?: string
@@ -309,13 +315,22 @@ export default function Model3DViewer({
       )}
 
       {/* Bottom Controls */}
-      <div className="absolute bottom-0 left-0 right-0 p-4 md:p-6 bg-gradient-to-t from-black/80 to-transparent z-20">
+      <div className="absolute bottom-0 left-0 right-0 p-4 md:p-6 bg-gradient-to-t from-black/90 to-transparent z-30">
         <div className="flex flex-col items-center gap-3">
           {/* View in your space button (for mobile after QR scan) */}
-          {showARButton && onViewInSpace && (
+          {showARButton && (
             <button
-              onClick={onViewInSpace}
-              className="w-full max-w-md px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium text-sm md:text-base shadow-lg"
+              onClick={() => {
+                console.log('View in Your Space clicked', { hasHandler: !!onViewInSpace })
+                if (onViewInSpace) {
+                  onViewInSpace()
+                } else {
+                  console.error('onViewInSpace handler not provided')
+                }
+              }}
+              disabled={!onViewInSpace}
+              className="w-full max-w-md px-8 py-4 bg-green-600 text-white rounded-xl hover:bg-green-700 active:bg-green-800 transition-colors font-semibold text-lg shadow-2xl disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{ minHeight: '56px' }}
             >
               View in Your Space
             </button>

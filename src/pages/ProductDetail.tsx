@@ -1,4 +1,4 @@
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { productsApi, cartApi, wishlistApi, reviewsApi } from '../lib/api'
@@ -13,13 +13,15 @@ import { useDeviceDetect } from '../components/ar/hooks/useDeviceDetect'
 
 export default function ProductDetail() {
   const { id } = useParams()
+  const navigate = useNavigate()
   const [selectedColor, setSelectedColor] = useState<any>(null)
   const [quantity, setQuantity] = useState(1)
   const [isWishlisted, setIsWishlisted] = useState(false)
   const { isAuthenticated } = useAuthStore()
   const { formatCurrency } = useCurrency()
   const queryClient = useQueryClient()
-  const { isDesktop } = useDeviceDetect()
+  const deviceInfo = useDeviceDetect()
+  const { isDesktop, isMobile } = deviceInfo
   const [show3DViewer, setShow3DViewer] = useState(false)
   const [showQRCode, setShowQRCode] = useState(false)
 
@@ -173,6 +175,25 @@ export default function ProductDetail() {
               >
                 <QrCode className="w-5 h-5" />
                 Show QR Code for Mobile AR
+              </button>
+            </div>
+          )}
+
+          {/* View in Your Space Button - Mobile Only */}
+          {product.rendablePath && isMobile && (
+            <div className="mb-6">
+              <button
+                onClick={() => {
+                  const params = new URLSearchParams({ productId: product.id.toString() })
+                  if (product.rendablePath) {
+                    params.set('modelUrl', encodeURIComponent(product.rendablePath))
+                  }
+                  navigate(`/webar?${params.toString()}`)
+                }}
+                className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-green-600 text-white rounded-lg hover:bg-green-700 active:bg-green-800 transition-colors font-semibold text-lg shadow-lg"
+              >
+                <Box className="w-6 h-6" />
+                View in Your Space
               </button>
             </div>
           )}
