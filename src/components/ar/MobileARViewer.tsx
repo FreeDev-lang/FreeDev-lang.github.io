@@ -12,6 +12,14 @@ interface MobileARViewerProps {
   onClose: () => void
 }
 
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      'model-viewer': any
+    }
+  }
+}
+
 export default function MobileARViewer({ productId, modelUrl, onClose }: MobileARViewerProps) {
   const { data: product } = useQuery({
     queryKey: ['product', productId],
@@ -26,12 +34,6 @@ export default function MobileARViewer({ productId, modelUrl, onClose }: MobileA
   const finalModelUrl = modelUrl || product?.rendablePath || ''
 
   useEffect(() => {
-    // Check if model-viewer is already loaded
-    if (customElements.get('model-viewer')) {
-      setIsModelViewerLoaded(true)
-      return
-    }
-
     // Load Google's model-viewer script
     const script = document.createElement('script')
     script.type = 'module'
@@ -40,9 +42,7 @@ export default function MobileARViewer({ productId, modelUrl, onClose }: MobileA
     document.head.appendChild(script)
 
     return () => {
-      if (document.head.contains(script)) {
-        document.head.removeChild(script)
-      }
+      document.head.removeChild(script)
     }
   }, [])
 

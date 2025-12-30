@@ -1,29 +1,27 @@
-import { useParams, Link, useNavigate } from 'react-router-dom'
+import { useParams, Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { productsApi, cartApi, wishlistApi, reviewsApi } from '../lib/api'
-import { ShoppingCart, Heart, Star, ArrowLeft, Package, Truck, Box, QrCode } from 'lucide-react'
+import { ShoppingCart, Heart, Star, ArrowLeft, Package, Truck, QrCode, Box } from 'lucide-react'
 import { useAuthStore } from '../store/authStore'
 import toast from 'react-hot-toast'
 import { useQueryClient } from '@tanstack/react-query'
 import { useCurrency } from '../utils/currency'
-import Model3DViewer from '../components/ar/Model3DViewer'
-import QRCodeDisplay from '../components/ar/QRCodeDisplay'
+import ARQRCode from '../components/ar/ARQRCode'
+import ModelViewer3D from '../components/ar/ModelViewer3D'
 import { useDeviceDetect } from '../components/ar/hooks/useDeviceDetect'
 
 export default function ProductDetail() {
   const { id } = useParams()
-  const navigate = useNavigate()
   const [selectedColor, setSelectedColor] = useState<any>(null)
   const [quantity, setQuantity] = useState(1)
   const [isWishlisted, setIsWishlisted] = useState(false)
+  const [showQRCode, setShowQRCode] = useState(false)
   const { isAuthenticated } = useAuthStore()
   const { formatCurrency } = useCurrency()
   const queryClient = useQueryClient()
-  const deviceInfo = useDeviceDetect()
-  const { isDesktop, isMobile } = deviceInfo
+  const { isDesktop } = useDeviceDetect()
   const [show3DViewer, setShow3DViewer] = useState(false)
-  const [showQRCode, setShowQRCode] = useState(false)
 
   const { data: product, isLoading } = useQuery({
     queryKey: ['product', id],
@@ -94,37 +92,55 @@ export default function ProductDetail() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Images / 3D Viewer */}
         <div>
-          <div className="aspect-square rounded-xl overflow-hidden bg-[#F5F5F5] mb-4 relative">
-            {product.images && product.images.length > 0 ? (
-              <img
-                src={product.images[0]}
-                alt={product.model}
-                className="w-full h-full object-cover"
+          {/* Desktop: Show 3D Viewer if model available, otherwise show images */}
+          {isDesktop && product.rendablePath && show3DViewer ? (
+            <div className="aspect-square rounded-xl overflow-hidden bg-gray-100 mb-4 relative">
+              <ModelViewer3D 
+                modelUrl={product.rendablePath} 
+                className="w-full h-full"
               />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center text-gray-400">
-                No Image
-              </div>
-            )}
-            {/* 3D View Toggle Button */}
-            {product.rendablePath && (
               <button
-                onClick={() => setShow3DViewer(true)}
-                className="absolute bottom-4 right-4 bg-green-600 text-white px-4 py-2 rounded-lg shadow-lg hover:bg-green-700 transition-colors flex items-center gap-2"
+                onClick={() => setShow3DViewer(false)}
+                className="absolute top-4 right-4 bg-white px-4 py-2 rounded-lg shadow-md hover:bg-gray-50 transition-colors z-10"
               >
-                <Box className="w-5 h-5" />
-                View 3D Model
+                View Images
               </button>
-            )}
-          </div>
-          {product.images && product.images.length > 1 && (
-            <div className="grid grid-cols-4 gap-2">
-              {product.images.slice(1, 5).map((img: string, idx: number) => (
-                <div key={idx} className="aspect-square rounded-lg overflow-hidden bg-gray-100">
-                  <img src={img} alt={`${product.model} ${idx + 2}`} className="w-full h-full object-cover" />
-                </div>
-              ))}
             </div>
+          ) : (
+            <>
+              <div className="aspect-square rounded-xl overflow-hidden bg-[#F5F5F5] mb-4 relative">
+                {product.images && product.images.length > 0 ? (
+                  <img
+                    src={product.images[0]}
+                    alt={product.model}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-gray-400">
+                    No Image
+                  </div>
+                )}
+                {/* 3D View Toggle Button (Desktop only) */}
+                {isDesktop && product.rendablePath && (
+                  <button
+                    onClick={() => setShow3DViewer(true)}
+                    className="absolute bottom-4 right-4 bg-green-600 text-white px-4 py-2 rounded-lg shadow-lg hover:bg-green-700 transition-colors flex items-center gap-2"
+                  >
+                    <Box className="w-5 h-5" />
+                    View 3D Model
+                  </button>
+                )}
+              </div>
+              {product.images && product.images.length > 1 && (
+                <div className="grid grid-cols-4 gap-2">
+                  {product.images.slice(1, 5).map((img: string, idx: number) => (
+                    <div key={idx} className="aspect-square rounded-lg overflow-hidden bg-gray-100">
+                      <img src={img} alt={`${product.model} ${idx + 2}`} className="w-full h-full object-cover" />
+                    </div>
+                  ))}
+                </div>
+              )}
+            </>
           )}
         </div>
 
@@ -159,42 +175,26 @@ export default function ProductDetail() {
             )}
           </div>
 
-          {/* 3D Preview / QR Code Section - Desktop Only */}
-          {product.rendablePath && isDesktop && (
-            <div className="mb-6 space-y-3">
-              <button
-                onClick={() => setShow3DViewer(true)}
-                className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
-              >
-                <Box className="w-5 h-5" />
-                View 3D Model
-              </button>
-              <button
-                onClick={() => setShowQRCode(true)}
-                className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-              >
-                <QrCode className="w-5 h-5" />
-                Show QR Code for Mobile AR
-              </button>
-            </div>
-          )}
-
-          {/* View in Your Space Button - Mobile Only */}
-          {product.rendablePath && isMobile && (
+          {/* AR / QR Code Section */}
+          {product.rendablePath && (
             <div className="mb-6">
-              <button
-                onClick={() => {
-                  const params = new URLSearchParams({ productId: product.id.toString() })
-                  if (product.rendablePath) {
-                    params.set('modelUrl', encodeURIComponent(product.rendablePath))
-                  }
-                  navigate(`/webar?${params.toString()}`)
-                }}
-                className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-green-600 text-white rounded-lg hover:bg-green-700 active:bg-green-800 transition-colors font-semibold text-lg shadow-lg"
-              >
-                <Box className="w-6 h-6" />
-                View in Your Space
-              </button>
+              {isDesktop ? (
+                <button
+                  onClick={() => setShowQRCode(true)}
+                  className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
+                >
+                  <QrCode className="w-5 h-5" />
+                  Show QR Code for Mobile AR
+                </button>
+              ) : (
+                <Link
+                  to={`/ar?productId=${product.id}${selectedColor?.id ? `&textureId=${selectedColor.id}` : ''}`}
+                  className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
+                >
+                  <Box className="w-5 h-5" />
+                  View in Your Space (AR)
+                </Link>
+              )}
             </div>
           )}
 
@@ -362,51 +362,14 @@ export default function ProductDetail() {
         </div>
       )}
 
-      {/* 3D Model Viewer Modal - Desktop */}
-      {show3DViewer && product.rendablePath && (
-        <Model3DViewer 
-          modelUrl={product.rendablePath}
-          productName={product.model}
-          productId={product.id.toString()}
-          dimensions={
-            product.sizes && product.sizes.length >= 3
-              ? {
-                  width: product.sizes[0],
-                  height: product.sizes[1],
-                  depth: product.sizes[2]
-                }
-              : undefined
-          }
-          onClose={() => setShow3DViewer(false)}
-          onAddToCart={handleAddToCart}
-        />
-      )}
-
-      {/* QR Code Modal - Desktop */}
+      {/* QR Code Modal for Desktop */}
       {showQRCode && isDesktop && product.rendablePath && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md relative">
-            <button
-              onClick={() => setShowQRCode(false)}
-              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-2xl"
-            >
-              ×
-            </button>
-            <QRCodeDisplay
-              url={`${window.location.origin}/ar?productId=${product.id}&modelUrl=${encodeURIComponent(product.rendablePath)}`}
-              productName={product.model}
-            />
-            <div className="mt-4 p-4 bg-blue-50 rounded-lg">
-              <h4 className="font-semibold text-blue-900 mb-2">How to use:</h4>
-              <ol className="text-sm text-blue-800 space-y-1 list-decimal list-inside">
-                <li>Open your phone camera</li>
-                <li>Point it at this QR code</li>
-                <li>Tap the notification to open the 3D preview</li>
-                <li>Tap "View in Your Space" to see it in AR</li>
-              </ol>
-            </div>
-          </div>
-        </div>
+        <ARQRCode
+          productId={product.id}
+          productName={product.model}
+          modelUrl={product.rendablePath}
+          onClose={() => setShowQRCode(false)}
+        />
       )}
     </div>
   )
