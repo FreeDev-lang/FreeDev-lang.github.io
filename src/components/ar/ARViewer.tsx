@@ -35,14 +35,14 @@ export default function ARViewer({
   const textureLoader = useTextureLoader()
 
   // Load product data
-  const { data: productData } = useQuery({
+  const { data: productData, isLoading: isLoadingProduct, error: productError } = useQuery({
     queryKey: ['product', initialProductId],
     queryFn: () => productsApi.getById(Number(initialProductId)).then((res) => res.data),
     enabled: !!initialProductId,
   })
 
   // Load textures
-  const { data: texturesData } = useQuery({
+  const { data: texturesData, isLoading: isLoadingTextures } = useQuery({
     queryKey: ['product-textures', initialProductId],
     queryFn: () => productColorsApi.getByProduct(Number(initialProductId)).then((res) => res.data),
     enabled: !!initialProductId,
@@ -258,12 +258,55 @@ export default function ARViewer({
     return () => clearTimeout(timer)
   }, [])
 
-  if (!supportChecked) {
+  // Show loading state while checking support or loading product
+  if (!supportChecked || isLoadingProduct || isLoadingTextures) {
     return (
-      <div className="fixed inset-0 z-50 bg-white flex items-center justify-center">
+      <div className="fixed inset-0 z-50 bg-black flex items-center justify-center">
         <div className="text-center p-6">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Checking AR support...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
+          <p className="text-white">
+            {!supportChecked ? 'Checking AR support...' : 'Loading product...'}
+          </p>
+        </div>
+      </div>
+    )
+  }
+
+  // Show error state if product failed to load
+  if (productError || !productData) {
+    return (
+      <div className="fixed inset-0 z-50 bg-black flex items-center justify-center">
+        <div className="text-center p-6 max-w-md">
+          <h2 className="text-2xl font-bold text-white mb-4">Failed to Load Product</h2>
+          <p className="text-gray-400 mb-6">
+            {productError ? 'Unable to load product data. Please try again.' : 'Product not found.'}
+          </p>
+          <button
+            onClick={onClose}
+            className="px-6 py-3 bg-white text-black rounded-lg hover:bg-gray-200 transition-colors font-medium"
+          >
+            Go Back
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  // Check if product has a model
+  if (!productData.rendablePath) {
+    return (
+      <div className="fixed inset-0 z-50 bg-black flex items-center justify-center">
+        <div className="text-center p-6 max-w-md">
+          <h2 className="text-2xl font-bold text-white mb-4">No 3D Model Available</h2>
+          <p className="text-gray-400 mb-6">
+            This product doesn't have a 3D model for AR viewing.
+          </p>
+          <button
+            onClick={onClose}
+            className="px-6 py-3 bg-white text-black rounded-lg hover:bg-gray-200 transition-colors font-medium"
+          >
+            Go Back
+          </button>
         </div>
       </div>
     )

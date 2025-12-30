@@ -2,25 +2,22 @@ import { useParams, Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { productsApi, cartApi, wishlistApi, reviewsApi } from '../lib/api'
-import { ShoppingCart, Heart, Star, ArrowLeft, Package, Truck, QrCode, Box } from 'lucide-react'
+import { ShoppingCart, Heart, Star, ArrowLeft, Package, Truck, Box } from 'lucide-react'
 import { useAuthStore } from '../store/authStore'
 import toast from 'react-hot-toast'
 import { useQueryClient } from '@tanstack/react-query'
 import { useCurrency } from '../utils/currency'
-import QRCodeDisplay from '../components/ar/QRCodeDisplay'
 import Model3DViewer from '../components/ar/Model3DViewer'
-import { useDeviceDetect } from '../components/ar/hooks/useDeviceDetect'
+import ARButton from '../components/ar/ARButton'
 
 export default function ProductDetail() {
   const { id } = useParams()
   const [selectedColor, setSelectedColor] = useState<any>(null)
   const [quantity, setQuantity] = useState(1)
   const [isWishlisted, setIsWishlisted] = useState(false)
-  const [showQRCode, setShowQRCode] = useState(false)
   const { isAuthenticated } = useAuthStore()
   const { formatCurrency } = useCurrency()
   const queryClient = useQueryClient()
-  const { isDesktop } = useDeviceDetect()
   const [show3DViewer, setShow3DViewer] = useState(false)
 
   const { data: product, isLoading } = useQuery({
@@ -160,23 +157,14 @@ export default function ProductDetail() {
           {/* AR / QR Code Section */}
           {product.rendablePath && (
             <div className="mb-6">
-              {isDesktop ? (
-                <button
-                  onClick={() => setShowQRCode(true)}
-                  className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
-                >
-                  <QrCode className="w-5 h-5" />
-                  Show QR Code for Mobile AR
-                </button>
-              ) : (
-                <Link
-                  to={`/ar?productId=${product.id}${selectedColor?.id ? `&textureId=${selectedColor.id}` : ''}`}
-                  className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
-                >
-                  <Box className="w-5 h-5" />
-                  View in Your Space (AR)
-                </Link>
-              )}
+              <ARButton
+                productId={product.id.toString()}
+                productName={product.model}
+                textureId={selectedColor?.id?.toString()}
+                modelUrl={product.rendablePath}
+                className="w-full"
+                variant="primary"
+              />
             </div>
           )}
 
@@ -364,26 +352,6 @@ export default function ProductDetail() {
         />
       )}
 
-      {/* QR Code Modal for Desktop */}
-      {showQRCode && isDesktop && product.rendablePath && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold">AR QR Code</h2>
-              <button
-                onClick={() => setShowQRCode(false)}
-                className="text-gray-400 hover:text-gray-600 text-2xl"
-              >
-                ×
-              </button>
-            </div>
-            <QRCodeDisplay
-              url={`${window.location.origin}/ar?productId=${product.id}&modelUrl=${encodeURIComponent(product.rendablePath)}`}
-              productName={product.model}
-            />
-          </div>
-        </div>
-      )}
     </div>
   )
 }
