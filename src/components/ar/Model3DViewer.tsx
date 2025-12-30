@@ -284,7 +284,9 @@ export default function Model3DViewer({
 
       {/* Dimensions Panel */}
       {dimensions && (dimensions.width > 0 || dimensions.height > 0 || dimensions.depth > 0) && (
-        <div className="absolute bottom-24 left-4 md:left-6 bg-white/90 backdrop-blur-sm rounded-lg p-4 md:p-5 shadow-xl z-10">
+        <div className={`absolute left-4 md:left-6 bg-white/90 backdrop-blur-sm rounded-lg p-4 md:p-5 shadow-xl z-10 ${
+          showARButton && onViewInSpace ? 'bottom-32 md:bottom-36' : 'bottom-24'
+        }`}>
           <div className="flex items-center gap-2 mb-3">
             <Ruler className="w-5 h-5 text-gray-700" />
             <h3 className="font-semibold text-gray-900 text-sm md:text-base">Dimensions</h3>
@@ -307,13 +309,13 @@ export default function Model3DViewer({
       )}
 
       {/* Bottom Controls */}
-      <div className="absolute bottom-0 left-0 right-0 p-4 md:p-6 bg-gradient-to-t from-black/80 to-transparent z-10">
+      <div className="absolute bottom-0 left-0 right-0 p-4 md:p-6 bg-gradient-to-t from-black/80 to-transparent z-20">
         <div className="flex flex-col items-center gap-3">
           {/* View in your space button (for mobile after QR scan) */}
           {showARButton && onViewInSpace && (
             <button
               onClick={onViewInSpace}
-              className="w-full max-w-md px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium text-sm md:text-base"
+              className="w-full max-w-md px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium text-sm md:text-base shadow-lg"
             >
               View in Your Space
             </button>
