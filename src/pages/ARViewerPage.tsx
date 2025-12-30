@@ -1,32 +1,30 @@
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import Model3DViewer from '../components/ar/Model3DViewer'
 import { useDeviceDetect } from '../components/ar/hooks/useDeviceDetect'
-import { productsApi } from '../lib/api'
+import ARViewer from '../components/ar/ARViewer'
+import Model3DViewer from '../components/ar/Model3DViewer'
 import type { CartItem } from '../components/ar/types/ar.types'
 import toast from 'react-hot-toast'
-import { cartApi } from '../lib/api'
+import { cartApi, productsApi } from '../lib/api'
 import { useAuthStore } from '../store/authStore'
 
 export default function ARViewerPage() {
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
-  const { isAuthenticated } = useAuthStore()
   const { isMobile } = useDeviceDetect()
+  const { isAuthenticated } = useAuthStore()
   
   const productId = searchParams.get('productId')
-  const modelUrlParam = searchParams.get('modelUrl')
-  
-  // Fetch product data to get modelUrl if not provided in URL
-  const { data: productData } = useQuery({
+  const textureId = searchParams.get('textureId') || undefined
+  const modelUrl = searchParams.get('modelUrl') || undefined
+  const mode = searchParams.get('mode')
+
+  // Fetch product data if needed
+  const { data: product, isLoading: loading, error } = useQuery({
     queryKey: ['product', productId],
     queryFn: () => productsApi.getById(Number(productId)).then((res) => res.data),
-    enabled: !!productId && !modelUrlParam,
+    enabled: !!productId && !modelUrl,
   })
-  
-  // Use modelUrl from URL param, or from product data, or undefined
-  const modelUrl = modelUrlParam || productData?.rendablePath || undefined
-  const productName = productData?.model || 'Product'
 
   const handleClose = () => {
     navigate(-1)
@@ -61,13 +59,29 @@ export default function ARViewerPage() {
     }
   }
 
-  // Error state - no product ID
-  if (!productId) {
+  // Loading state
+  if (loading) {
+    return (
+      <div className="fixed inset-0 z-50 bg-black flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto" />
+          <p className="mt-4 text-white">Loading...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Error state
+  if (error || !productId) {
     return (
       <div className="fixed inset-0 z-50 bg-white flex items-center justify-center">
         <div className="text-center p-6">
-          <h2 className="text-2xl font-bold mb-4">Invalid Product</h2>
-          <p className="text-gray-600 mb-6">No product ID provided</p>
+          <h2 className="text-2xl font-bold mb-4">
+            {error ? 'Error' : 'Invalid Product'}
+          </h2>
+          <p className="text-gray-600 mb-6">
+            {error ? 'Please try again later' : 'No product ID provided'}
+          </p>
           <button
             onClick={handleClose}
             className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
@@ -79,52 +93,46 @@ export default function ARViewerPage() {
     )
   }
 
-  // Check if user wants 3D viewer mode (not AR)
-  const mode = searchParams.get('mode')
-  
-  // For mobile: Use Model3DViewer with AR enabled (model-viewer's built-in AR)
-  // For desktop: Use Model3DViewer without AR (3D preview only)
-  // If mode=3d is specified, disable AR even on mobile
-  const enableAR = isMobile && mode !== '3d' && !!modelUrl
-  
-  if (modelUrl) {
+  // No model available
+  if (!product?.rendablePath && !modelUrl) {
     return (
-      <Model3DViewer
-        modelUrl={modelUrl}
-        productName={productName}
-        productId={productId}
-        enableAR={enableAR}
-        onClose={handleClose}
-        onAddToCart={() => handleAddToCart()}
-      />
-    )
-  }
-  
-  // Show loading while fetching product data
-  if (productId && !modelUrlParam && !productData) {
-    return (
-      <div className="fixed inset-0 z-50 bg-black flex items-center justify-center">
+      <div className="fixed inset-0 z-50 bg-white flex items-center justify-center">
         <div className="text-center p-6">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
-          <p className="text-white">Loading product...</p>
+          <h2 className="text-2xl font-bold mb-4">3D Model Not Available</h2>
+          <p className="text-gray-600 mb-6">
+            This product doesn't have a 3D model for AR viewing.
+          </p>
+          <button
+            onClick={handleClose}
+            className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700"
+          >
+            Go Back
+          </button>
         </div>
       </div>
     )
   }
 
-  // Fallback: If no modelUrl, show error
+  // Use Model3DViewer for 3D-only mode or mobile with modelUrl
+  if (mode === '3d' || (isMobile && modelUrl)) {
+    return (
+      <Model3DViewer
+        modelUrl={modelUrl || product?.rendablePath || ''}
+        productName={product?.model || 'Product'}
+        productId={productId}
+        onClose={handleClose}
+        onAddToCart={() => handleAddToCart()}
+      />
+    )
+  }
+
+  // Default: Use ARViewer for WebXR AR experience
   return (
-    <div className="fixed inset-0 z-50 bg-white flex items-center justify-center">
-      <div className="text-center p-6">
-        <h2 className="text-2xl font-bold mb-4">No 3D Model Available</h2>
-        <p className="text-gray-600 mb-6">This product doesn't have a 3D model.</p>
-        <button
-          onClick={handleClose}
-          className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-        >
-          Go Back
-        </button>
-      </div>
-    </div>
+    <ARViewer
+      initialProductId={productId}
+      initialTextureId={textureId}
+      onClose={handleClose}
+      onAddToCart={handleAddToCart}
+    />
   )
 }
