@@ -34,6 +34,7 @@ import AdminSocialMedia from './pages/AdminSocialMedia'
 import AdminStores from './pages/AdminStores'
 import SetupAdmin from './pages/SetupAdmin'
 import ARViewerPage from './pages/ARViewerPage'
+import WebARPage from './pages/WebARPage'
 import Stores from './pages/Stores'
 import StoreDetail from './pages/StoreDetail'
 import AdminRoute from './components/AdminRoute'
@@ -86,6 +87,7 @@ function App() {
     <>
       <Routes>
         <Route path="/ar" element={<ARViewerPage />} />
+        <Route path="/webar" element={<WebARPage />} />
         <Route path="/" element={<Layout />}>
           <Route index element={<Home />} />
           <Route path="products" element={<Products />} />
