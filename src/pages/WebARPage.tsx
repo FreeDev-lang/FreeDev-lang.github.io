@@ -4,32 +4,7 @@ import { useQuery } from '@tanstack/react-query'
 import { productsApi, cartApi } from '../lib/api'
 import { useAuthStore } from '../store/authStore'
 import toast from 'react-hot-toast'
-import { X } from 'lucide-react'
-
-declare global {
-  namespace JSX {
-    interface IntrinsicElements {
-      'model-viewer': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & {
-        src: string
-        alt?: string
-        'auto-rotate'?: boolean
-        'camera-controls'?: boolean
-        'touch-action'?: string
-        'interaction-policy'?: string
-        'loading'?: string
-        'ar'?: boolean
-        'ar-modes'?: string
-        'ar-scale'?: string
-        'ar-placement'?: string
-        'xr-environment'?: boolean
-        'shadow-intensity'?: string
-        'environment-image'?: string
-        'exposure'?: string
-        'poster'?: string
-      }, HTMLElement>
-    }
-  }
-}
+import { X, Box } from 'lucide-react'
 
 export default function WebARPage() {
   const [searchParams] = useSearchParams()
@@ -38,6 +13,8 @@ export default function WebARPage() {
   const [isModelViewerLoaded, setIsModelViewerLoaded] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [arStatus, setArStatus] = useState<string>('not-presenting')
+  const [isArActive, setIsArActive] = useState(false)
   const modelViewerRef = useRef<any>(null)
 
   const productId = searchParams.get('productId')
@@ -84,6 +61,7 @@ export default function WebARPage() {
 
     const viewer = modelViewerRef.current
     let checkInterval: number | null = null
+    let arStatusInterval: number | null = null
 
     const handleLoad = () => {
       setIsLoading(false)
@@ -97,20 +75,32 @@ export default function WebARPage() {
       if (checkInterval) clearInterval(checkInterval)
     }
 
+    // Monitor AR status
+    const updateArStatus = () => {
+      if (viewer) {
+        const status = viewer.getAttribute('ar-status') || 'not-presenting'
+        setArStatus(status)
+        setIsArActive(status === 'presenting' || status === 'session-started')
+      }
+    }
+
     const timeoutId = setTimeout(() => {
       if (viewer.loaded === true) {
         handleLoad()
-        return
+      } else {
+        viewer.addEventListener('load', handleLoad)
+        viewer.addEventListener('error', handleError)
+        
+        checkInterval = setInterval(() => {
+          if (viewer.loaded === true) {
+            handleLoad()
+          }
+        }, 500)
       }
 
-      viewer.addEventListener('load', handleLoad)
-      viewer.addEventListener('error', handleError)
-      
-      checkInterval = setInterval(() => {
-        if (viewer.loaded === true) {
-          handleLoad()
-        }
-      }, 500)
+      // Monitor AR status changes
+      updateArStatus()
+      arStatusInterval = setInterval(updateArStatus, 100)
       
       setTimeout(() => {
         if (checkInterval) clearInterval(checkInterval)
@@ -127,6 +117,7 @@ export default function WebARPage() {
     return () => {
       clearTimeout(timeoutId)
       if (checkInterval) clearInterval(checkInterval)
+      if (arStatusInterval) clearInterval(arStatusInterval)
       if (viewer) {
         viewer.removeEventListener('load', handleLoad)
         viewer.removeEventListener('error', handleError)
@@ -174,19 +165,19 @@ export default function WebARPage() {
 
   return (
     <div className="fixed inset-0 z-[9999] bg-black">
-      {/* Header */}
-      <div className="absolute top-0 left-0 right-0 z-10 p-4 flex items-center justify-between bg-gradient-to-b from-black/80 to-transparent">
-        <button
-          onClick={() => navigate(-1)}
-          className="p-2 bg-white/10 hover:bg-white/20 rounded-full text-white transition-colors backdrop-blur-sm"
-        >
-          <X className="w-5 h-5" />
-        </button>
-        <h1 className="text-white font-medium text-base truncate max-w-[60%] mx-auto">
-          {productName}
-        </h1>
-        <div className="w-10" />
-      </div>
+        {/* Header */}
+        <div className="absolute top-0 left-0 right-0 z-10 p-4 flex items-center justify-between bg-gradient-to-b from-black/80 to-transparent">
+          <button
+            onClick={() => navigate(-1)}
+            className="p-2 bg-white/10 hover:bg-white/20 rounded-full text-white transition-colors backdrop-blur-sm"
+          >
+            <X className="w-5 h-5" />
+          </button>
+          <h1 className="text-white font-medium text-base truncate max-w-[60%] mx-auto">
+            {productName}
+          </h1>
+          <div className="w-10" />
+        </div>
 
       {/* AR Model Viewer */}
       <div className="absolute inset-0">
@@ -212,7 +203,17 @@ export default function WebARPage() {
               height: '100%',
               backgroundColor: '#000000'
             }}
-          />
+          >
+            {/* Custom AR Button Slot */}
+            <button
+              slot="ar-button"
+              className="absolute top-4 right-4 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 active:bg-green-800 transition-colors font-semibold text-sm shadow-lg flex items-center gap-2 z-30"
+            >
+              <Box className="w-4 h-4" />
+              View in your space
+            </button>
+
+          </model-viewer>
         ) : (
           <div className="absolute inset-0 flex items-center justify-center bg-black">
             <div className="text-center">
@@ -250,22 +251,58 @@ export default function WebARPage() {
             </div>
           </div>
         )}
+
+        {/* AR Status Indicators - Based on ar-status attribute */}
+        {isArActive && arStatus === 'not-tracking' && (
+          <div className="absolute top-20 left-1/2 -translate-x-1/2 px-4 py-2 bg-yellow-500/90 text-white rounded-lg font-medium text-sm shadow-lg z-30 animate-pulse pointer-events-none">
+            AR is not tracking! Move your phone around to find the floor.
+          </div>
+        )}
+
+        {isArActive && arStatus === 'session-started' && (
+          <div className="absolute top-20 left-1/2 -translate-x-1/2 px-4 py-2 bg-blue-500/90 text-white rounded-lg font-medium text-sm shadow-lg z-30 animate-bounce pointer-events-none">
+            Move your phone around to help AR find your floor
+          </div>
+        )}
       </div>
 
-      {/* Bottom Controls */}
-      <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 to-transparent z-10">
-        <div className="flex flex-col items-center gap-3">
-          <button
-            onClick={handleAddToCart}
-            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-          >
-            Add to Cart
-          </button>
-          <p className="text-center text-white/60 text-xs">
-            Tap the AR button to view in your space
-          </p>
+      {/* Bottom Controls - Hidden when AR is active */}
+      {!isArActive && (
+        <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 to-transparent z-10">
+          <div className="flex flex-col items-center gap-3">
+            <button
+              onClick={handleAddToCart}
+              className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+            >
+              Add to Cart
+            </button>
+            <p className="text-center text-white/60 text-xs">
+              Tap the AR button above to view in your space
+            </p>
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* AR Active Controls - Show when AR is active */}
+      {isArActive && (
+        <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/90 to-transparent z-10">
+          <div className="flex flex-col items-center gap-2">
+            <p className="text-center text-white/80 text-xs mb-2">
+              {arStatus === 'not-tracking' 
+                ? 'Move your device to find a surface'
+                : arStatus === 'session-started'
+                ? 'Point your camera at a flat surface'
+                : 'Tap to place the product in your space'}
+            </p>
+            <button
+              onClick={handleAddToCart}
+              className="px-6 py-3 bg-blue-600/90 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium backdrop-blur-sm"
+            >
+              Add to Cart
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

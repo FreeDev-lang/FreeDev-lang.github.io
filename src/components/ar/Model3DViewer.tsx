@@ -31,6 +31,7 @@ declare global {
         'ar-modes'?: string
         'ar-scale'?: string
         'ar-placement'?: string
+        'ar-status'?: string
         'xr-environment'?: boolean
         'shadow-intensity'?: string
         'environment-image'?: string
