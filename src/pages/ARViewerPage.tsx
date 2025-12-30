@@ -1,33 +1,26 @@
 import { useSearchParams, useNavigate } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
-import Model3DViewer from '../components/ar/Model3DViewer'
-import { productsApi, cartApi } from '../lib/api'
-import { useAuthStore } from '../store/authStore'
+import { useDeviceDetect } from '../components/ar/hooks/useDeviceDetect'
+import ARViewer from '../components/ar/ARViewer'
+import MobileARViewer from '../components/ar/MobileARViewer'
+import type { CartItem } from '../components/ar/types/ar.types'
 import toast from 'react-hot-toast'
+import { cartApi } from '../lib/api'
+import { useAuthStore } from '../store/authStore'
 
 export default function ARViewerPage() {
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
+  const { isMobile } = useDeviceDetect()
   const { isAuthenticated } = useAuthStore()
-  
   const productId = searchParams.get('productId')
-  const modelUrl = searchParams.get('modelUrl')
-
-  // Fetch product data if needed
-  const { data: product, isLoading: loading, error } = useQuery({
-    queryKey: ['product', productId],
-    queryFn: () => productsApi.getById(Number(productId)).then((res) => res.data),
-    enabled: !!productId && !modelUrl,
-  })
-
-  const finalModelUrl = modelUrl || product?.rendablePath
-  const productName = product?.model || 'Product'
+  const textureId = searchParams.get('textureId') || undefined
+  const modelUrl = searchParams.get('modelUrl') || undefined
 
   const handleClose = () => {
     navigate(-1)
   }
 
-  const handleAddToCart = async () => {
+  const handleAddToCart = async (items: CartItem[]) => {
     if (!isAuthenticated()) {
       toast.error('Please sign in to add items to cart')
       navigate('/login')
@@ -35,71 +28,24 @@ export default function ARViewerPage() {
     }
 
     try {
-      if (productId) {
+      for (const item of items) {
         await cartApi.add({
-          furnitureItemId: Number(productId),
-          quantity: 1,
+          furnitureItemId: Number(item.productId),
+          quantity: item.quantity,
         })
-        toast.success('Added to cart!')
       }
-    } catch (error: unknown) {
-      const err = error as { response?: { data?: { message?: string } } }
-      toast.error(err.response?.data?.message || 'Failed to add to cart')
+      toast.success('Added to cart!')
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to add to cart')
     }
   }
 
-  const handleViewInSpace = () => {
-    // Navigate to WebAR page
-    const params = new URLSearchParams({ productId: productId || '' })
-    if (finalModelUrl) {
-      params.set('modelUrl', encodeURIComponent(finalModelUrl))
-    }
-    navigate(`/webar?${params.toString()}`)
-  }
-
-  // Loading state
-  if (loading) {
-    return (
-      <div className="fixed inset-0 z-50 bg-black flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto" />
-          <p className="mt-4 text-white">Loading...</p>
-        </div>
-      </div>
-    )
-  }
-
-  // Error state
-  if (error || !productId) {
+  if (!productId) {
     return (
       <div className="fixed inset-0 z-50 bg-white flex items-center justify-center">
         <div className="text-center p-6">
-          <h2 className="text-2xl font-bold mb-4">
-            {error ? 'Error' : 'Invalid Product'}
-          </h2>
-          <p className="text-gray-600 mb-6">
-            {error ? 'Please try again later' : 'No product ID provided'}
-          </p>
-          <button
-            onClick={handleClose}
-            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            Go Back
-          </button>
-        </div>
-      </div>
-    )
-  }
-
-  // No model available
-  if (!finalModelUrl) {
-    return (
-      <div className="fixed inset-0 z-50 bg-white flex items-center justify-center">
-        <div className="text-center p-6">
-          <h2 className="text-2xl font-bold mb-4">3D Model Not Available</h2>
-          <p className="text-gray-600 mb-6">
-            This product doesn't have a 3D model for viewing.
-          </p>
+          <h2 className="text-2xl font-bold mb-4">Invalid Product</h2>
+          <p className="text-gray-600 mb-6">No product ID provided</p>
           <button
             onClick={handleClose}
             className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700"
@@ -111,25 +57,25 @@ export default function ARViewerPage() {
     )
   }
 
-  // Show 3D preview with "View in your space" button (mobile after QR scan)
+  // Use MobileARViewer for mobile devices (Google model-viewer)
+  // Use ARViewer for desktop (React Three Fiber with WebXR)
+  if (isMobile) {
+    return (
+      <MobileARViewer
+        productId={productId}
+        modelUrl={modelUrl}
+        onClose={handleClose}
+      />
+    )
+  }
+
   return (
-    <Model3DViewer
-      modelUrl={finalModelUrl}
-      productName={productName}
-      productId={productId}
-      dimensions={
-        product?.sizes && product.sizes.length >= 3
-          ? {
-              width: product.sizes[0],
-              height: product.sizes[1],
-              depth: product.sizes[2]
-            }
-          : undefined
-      }
-      showARButton={true}
+    <ARViewer
+      initialProductId={productId}
+      initialTextureId={textureId}
       onClose={handleClose}
       onAddToCart={handleAddToCart}
-      onViewInSpace={handleViewInSpace}
     />
   )
 }
+
