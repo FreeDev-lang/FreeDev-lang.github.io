@@ -1,6 +1,8 @@
 import { useSearchParams, useNavigate } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
 import Model3DViewer from '../components/ar/Model3DViewer'
 import { useDeviceDetect } from '../components/ar/hooks/useDeviceDetect'
+import { productsApi } from '../lib/api'
 import type { CartItem } from '../components/ar/types/ar.types'
 import toast from 'react-hot-toast'
 import { cartApi } from '../lib/api'
@@ -13,7 +15,18 @@ export default function ARViewerPage() {
   const { isMobile } = useDeviceDetect()
   
   const productId = searchParams.get('productId')
-  const modelUrl = searchParams.get('modelUrl') || undefined
+  const modelUrlParam = searchParams.get('modelUrl')
+  
+  // Fetch product data to get modelUrl if not provided in URL
+  const { data: productData } = useQuery({
+    queryKey: ['product', productId],
+    queryFn: () => productsApi.getById(Number(productId)).then((res) => res.data),
+    enabled: !!productId && !modelUrlParam,
+  })
+  
+  // Use modelUrl from URL param, or from product data, or undefined
+  const modelUrl = modelUrlParam || productData?.rendablePath || undefined
+  const productName = productData?.model || 'Product'
 
   const handleClose = () => {
     navigate(-1)
@@ -78,12 +91,24 @@ export default function ARViewerPage() {
     return (
       <Model3DViewer
         modelUrl={modelUrl}
-        productName="Product"
+        productName={productName}
         productId={productId}
         enableAR={enableAR}
         onClose={handleClose}
         onAddToCart={() => handleAddToCart()}
       />
+    )
+  }
+  
+  // Show loading while fetching product data
+  if (productId && !modelUrlParam && !productData) {
+    return (
+      <div className="fixed inset-0 z-50 bg-black flex items-center justify-center">
+        <div className="text-center p-6">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
+          <p className="text-white">Loading product...</p>
+        </div>
+      </div>
     )
   }
 

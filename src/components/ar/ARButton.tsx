@@ -51,6 +51,7 @@ export default function ARButton({
           {
             const params = new URLSearchParams({ productId })
             if (textureId) params.set('textureId', textureId)
+            if (modelUrl) params.set('modelUrl', encodeURIComponent(modelUrl))
             navigate(`/ar?${params.toString()}`)
           }
           break
@@ -79,7 +80,11 @@ export default function ARButton({
           
         case '3d-only':
           // Navigate to 3D viewer
-          navigate(`/ar?productId=${productId}&mode=3d`)
+          {
+            const params = new URLSearchParams({ productId, mode: '3d' })
+            if (modelUrl) params.set('modelUrl', encodeURIComponent(modelUrl))
+            navigate(`/ar?${params.toString()}`)
+          }
           break
           
         default:
