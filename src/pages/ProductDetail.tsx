@@ -92,51 +92,37 @@ export default function ProductDetail() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Images / 3D Viewer */}
         <div>
-          {/* Desktop: Show 3D Viewer if model available, otherwise show images */}
-          {isDesktop && product.rendablePath && show3DViewer ? (
-            <div className="aspect-square rounded-xl overflow-hidden bg-gray-100 mb-4 relative">
-              <Model3DViewer 
-                modelUrl={product.rendablePath}
-                productName={product.model}
-                productId={product.id.toString()}
-                onClose={() => setShow3DViewer(false)}
+          <div className="aspect-square rounded-xl overflow-hidden bg-[#F5F5F5] mb-4 relative">
+            {product.images && product.images.length > 0 ? (
+              <img
+                src={product.images[0]}
+                alt={product.model}
+                className="w-full h-full object-cover"
               />
-            </div>
-          ) : (
-            <>
-              <div className="aspect-square rounded-xl overflow-hidden bg-[#F5F5F5] mb-4 relative">
-                {product.images && product.images.length > 0 ? (
-                  <img
-                    src={product.images[0]}
-                    alt={product.model}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-gray-400">
-                    No Image
-                  </div>
-                )}
-                {/* 3D View Toggle Button (Desktop only) */}
-                {isDesktop && product.rendablePath && (
-                  <button
-                    onClick={() => setShow3DViewer(true)}
-                    className="absolute bottom-4 right-4 bg-green-600 text-white px-4 py-2 rounded-lg shadow-lg hover:bg-green-700 transition-colors flex items-center gap-2"
-                  >
-                    <Box className="w-5 h-5" />
-                    View 3D Model
-                  </button>
-                )}
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-gray-400">
+                No Image
               </div>
-              {product.images && product.images.length > 1 && (
-                <div className="grid grid-cols-4 gap-2">
-                  {product.images.slice(1, 5).map((img: string, idx: number) => (
-                    <div key={idx} className="aspect-square rounded-lg overflow-hidden bg-gray-100">
-                      <img src={img} alt={`${product.model} ${idx + 2}`} className="w-full h-full object-cover" />
-                    </div>
-                  ))}
+            )}
+            {/* 3D View Toggle Button */}
+            {product.rendablePath && (
+              <button
+                onClick={() => setShow3DViewer(true)}
+                className="absolute bottom-4 right-4 bg-green-600 text-white px-4 py-2 rounded-lg shadow-lg hover:bg-green-700 transition-colors flex items-center gap-2"
+              >
+                <Box className="w-5 h-5" />
+                View 3D Model
+              </button>
+            )}
+          </div>
+          {product.images && product.images.length > 1 && (
+            <div className="grid grid-cols-4 gap-2">
+              {product.images.slice(1, 5).map((img: string, idx: number) => (
+                <div key={idx} className="aspect-square rounded-lg overflow-hidden bg-gray-100">
+                  <img src={img} alt={`${product.model} ${idx + 2}`} className="w-full h-full object-cover" />
                 </div>
-              )}
-            </>
+              ))}
+            </div>
           )}
         </div>
 
@@ -356,6 +342,26 @@ export default function ProductDetail() {
             ))}
           </div>
         </div>
+      )}
+
+      {/* 3D Model Viewer Modal */}
+      {show3DViewer && product.rendablePath && (
+        <Model3DViewer 
+          modelUrl={product.rendablePath}
+          productName={product.model}
+          productId={product.id.toString()}
+          dimensions={
+            product.sizes && product.sizes.length >= 3
+              ? {
+                  width: product.sizes[0],
+                  height: product.sizes[1],
+                  depth: product.sizes[2]
+                }
+              : undefined
+          }
+          onClose={() => setShow3DViewer(false)}
+          onAddToCart={handleAddToCart}
+        />
       )}
 
       {/* QR Code Modal for Desktop */}

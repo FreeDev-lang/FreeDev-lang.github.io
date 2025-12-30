@@ -68,9 +68,12 @@ export default function ARViewerPage() {
     )
   }
 
-  // Use Model3DViewer for mobile devices (Google model-viewer)
-  // Use ARViewer for desktop (React Three Fiber with WebXR)
-  if (isMobile && modelUrl) {
+  // Check if user wants 3D viewer mode (not AR)
+  const mode = searchParams.get('mode')
+  
+  // Use Model3DViewer only if explicitly requested (mode=3d)
+  // Otherwise use ARViewer for the actual AR experience
+  if (mode === '3d' && modelUrl) {
     return (
       <Model3DViewer
         modelUrl={modelUrl}
@@ -82,6 +85,7 @@ export default function ARViewerPage() {
     )
   }
 
+  // Default: Use ARViewer for WebXR AR experience
   return (
     <ARViewer
       initialProductId={productId}
