@@ -1,5 +1,4 @@
 import { useSearchParams, useNavigate } from 'react-router-dom'
-import { useDeviceDetect } from '../components/ar/hooks/useDeviceDetect'
 import ARViewer from '../components/ar/ARViewer'
 import Model3DViewer from '../components/ar/Model3DViewer'
 import type { CartItem } from '../components/ar/types/ar.types'
