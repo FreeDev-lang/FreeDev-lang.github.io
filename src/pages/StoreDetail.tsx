@@ -36,13 +36,32 @@ interface CarouselSlide {
   title: string | null
   subtitle: string | null
   active: boolean
+  order: number
+  startDate?: string | null
+  endDate?: string | null
+}
+
+interface FlashSale {
+  productId: number
+  discount: number
+  start: string
+  end: string
+  active: boolean
+}
+
+interface Banner {
+  imageUrl: string
+  link?: string | null
+  position: string
+  active: boolean
+  order: number
 }
 
 interface StoreCustomization {
   carouselSlides: CarouselSlide[] | null
   featuredProducts: number[] | null
-  flashSales: any[] | null
-  banners: any[] | null
+  flashSales: FlashSale[] | null
+  banners: Banner[] | null
 }
 
 export default function StoreDetail() {
@@ -98,7 +117,14 @@ export default function StoreDetail() {
     }
   }
 
-  const activeSlides = customization?.carouselSlides?.filter(s => s.active) || []
+  // Filter carousel slides by active status and date range
+  const activeSlides = customization?.carouselSlides?.filter(slide => {
+    if (!slide.active) return false
+    const now = new Date()
+    if (slide.startDate && new Date(slide.startDate) > now) return false
+    if (slide.endDate && new Date(slide.endDate) < now) return false
+    return true
+  }).sort((a, b) => a.order - b.order) || []
 
   useEffect(() => {
     if (activeSlides.length > 1) {
@@ -224,19 +250,79 @@ export default function StoreDetail() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Banners Section */}
+        {customization?.banners && customization.banners.filter(b => b.active).length > 0 && (
+          <div className="mb-8 space-y-4">
+            {customization.banners
+              .filter(banner => banner.active)
+              .sort((a, b) => a.order - b.order)
+              .map((banner, index) => (
+                <div key={index} className="relative rounded-lg overflow-hidden">
+                  {banner.link ? (
+                    <Link to={banner.link}>
+                      <img
+                        src={banner.imageUrl}
+                        alt="Store Banner"
+                        className="w-full h-48 md:h-64 object-cover"
+                      />
+                    </Link>
+                  ) : (
+                    <img
+                      src={banner.imageUrl}
+                      alt="Store Banner"
+                      className="w-full h-48 md:h-64 object-cover"
+                    />
+                  )}
+                </div>
+              ))}
+          </div>
+        )}
+
         {/* Flash Sales Section */}
         {customization?.flashSales && customization.flashSales.filter(s => s.active).length > 0 && (
           <div className="bg-gradient-to-r from-red-500 to-orange-500 rounded-lg p-6 mb-8 text-white">
             <h2 className="text-2xl font-bold mb-4">🔥 Flash Sales</h2>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {customization.flashSales
-                .filter(sale => sale.active)
+                .filter(sale => {
+                  if (!sale.active) return false
+                  const now = new Date()
+                  return new Date(sale.start) <= now && new Date(sale.end) >= now
+                })
                 .slice(0, 4)
-                .map((sale, index) => (
-                  <div key={index} className="bg-white bg-opacity-20 rounded-lg p-4">
-                    <p className="text-sm opacity-90">Up to {sale.discount}% OFF</p>
-                  </div>
-                ))}
+                .map((sale, index) => {
+                  const product = products.find(p => p.id === sale.productId)
+                  if (!product) return null
+                  
+                  const discountPrice = product.price * (1 - sale.discount / 100)
+                  const timeRemaining = new Date(sale.end).getTime() - new Date().getTime()
+                  const hoursLeft = Math.floor(timeRemaining / (1000 * 60 * 60))
+                  
+                  return (
+                    <Link
+                      key={index}
+                      to={`/products/${product.id}`}
+                      className="bg-white bg-opacity-20 rounded-lg p-4 hover:bg-opacity-30 transition-colors"
+                    >
+                      {product.images && product.images.length > 0 && (
+                        <img
+                          src={typeof product.images[0] === 'string' ? product.images[0] : product.images[0].imageUrl}
+                          alt={product.model}
+                          className="w-full h-32 object-cover rounded mb-2"
+                        />
+                      )}
+                      <p className="font-semibold text-sm mb-1">{product.model}</p>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-lg font-bold">{discountPrice.toFixed(2)}</span>
+                        <span className="text-sm line-through opacity-75">{product.price.toFixed(2)}</span>
+                        <span className="text-sm font-bold bg-red-600 px-2 py-1 rounded">{sale.discount}% OFF</span>
+                      </div>
+                      {hoursLeft > 0 && (
+                        <p className="text-xs opacity-90">Ends in {hoursLeft}h</p>
+                      )}
+                    </Link>
+                  )
+                })}
             </div>
           </div>
         )}
@@ -244,9 +330,16 @@ export default function StoreDetail() {
         {/* Featured Products */}
         {products.length > 0 && (
           <div className="mb-8">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">Featured Products</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">
+              {customization?.featuredProducts && customization.featuredProducts.length > 0
+                ? 'Featured Products'
+                : 'Products'}
+            </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {products.slice(0, 8).map((product) => (
+              {(customization?.featuredProducts && customization.featuredProducts.length > 0
+                ? products.filter(p => customization.featuredProducts!.includes(p.id))
+                : products
+              ).slice(0, 8).map((product) => (
                 <ProductCard key={product.id} product={product} />
               ))}
             </div>

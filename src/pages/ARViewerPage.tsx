@@ -1,7 +1,7 @@
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import { useDeviceDetect } from '../components/ar/hooks/useDeviceDetect'
 import ARViewer from '../components/ar/ARViewer'
-import MobileARViewer from '../components/ar/MobileARViewer'
+import Model3DViewer from '../components/ar/Model3DViewer'
 import type { CartItem } from '../components/ar/types/ar.types'
 import toast from 'react-hot-toast'
 import { cartApi } from '../lib/api'
@@ -50,7 +50,7 @@ export default function ARViewerPage() {
     }
   }
 
-  // Validate productId
+  // Error state - no product ID
   if (!productId) {
     return (
       <div className="fixed inset-0 z-50 bg-white flex items-center justify-center">
@@ -59,7 +59,7 @@ export default function ARViewerPage() {
           <p className="text-gray-600 mb-6">No product ID provided</p>
           <button
             onClick={handleClose}
-            className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700"
+            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
           >
             Go Back
           </button>
@@ -68,14 +68,16 @@ export default function ARViewerPage() {
     )
   }
 
-  // Use MobileARViewer for mobile devices (Google model-viewer)
+  // Use Model3DViewer for mobile devices (Google model-viewer)
   // Use ARViewer for desktop (React Three Fiber with WebXR)
-  if (isMobile) {
+  if (isMobile && modelUrl) {
     return (
-      <MobileARViewer
-        productId={productId}
+      <Model3DViewer
         modelUrl={modelUrl}
+        productName="Product"
+        productId={productId}
         onClose={handleClose}
+        onAddToCart={() => handleAddToCart()}
       />
     )
   }

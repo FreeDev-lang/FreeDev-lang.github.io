@@ -1,20 +1,36 @@
 import { Link, useNavigate } from 'react-router-dom'
-import { ShoppingCart, User, Menu, X, Search, Globe } from 'lucide-react'
-import { useState } from 'react'
+import { ShoppingCart, User, Menu, X, Search, Globe, Store } from 'lucide-react'
+import { useState, useEffect } from 'react'
 import { useAuthStore } from '../store/authStore'
 import { useCartStore } from '../store/cartStore'
 import { useLanguageStore, getLanguageName } from '../store/languageStore'
 import { useTranslation } from '../utils/i18n'
+import { storeAdminApi } from '../lib/api'
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isLangMenuOpen, setIsLangMenuOpen] = useState(false)
   const [search, setSearch] = useState('')
+  const [hasStores, setHasStores] = useState(false)
   const { user, logout, isAuthenticated } = useAuthStore()
   const { totalItems } = useCartStore()
   const { language, setLanguage } = useLanguageStore()
   const { t } = useTranslation()
   const navigate = useNavigate()
+
+  useEffect(() => {
+    const checkStores = async () => {
+      if (isAuthenticated()) {
+        try {
+          const response = await storeAdminApi.getMyStores()
+          setHasStores(response.data.length > 0)
+        } catch (error) {
+          setHasStores(false)
+        }
+      }
+    }
+    checkStores()
+  }, [isAuthenticated, user])
 
   const handleLogout = () => {
     logout()
@@ -128,6 +144,12 @@ export default function Navbar() {
                   {isAuthenticated() && (
                     <Link to="/wishlist" className="block px-4 py-2 text-slate-700 hover:bg-gray-100">
                       {t('nav.wishlist')}
+                    </Link>
+                  )}
+                  {hasStores && (
+                    <Link to="/store-admin/dashboard" className="block px-4 py-2 text-blue-600 hover:bg-blue-50 font-medium flex items-center gap-2">
+                      <Store className="w-4 h-4" />
+                      Store Admin
                     </Link>
                   )}
                   {user.isAdmin && (

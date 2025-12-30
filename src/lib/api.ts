@@ -144,6 +144,7 @@ export const adminApi = {
   createStore: (data: any, ownerId: number) => api.post(`/admin/stores?ownerId=${ownerId}`, data),
   updateStore: (id: number, data: any) => api.put(`/admin/stores/${id}`, data),
   updateStoreStatus: (id: number, status: string) => api.put(`/admin/stores/${id}/status`, { status }),
+  deleteStore: (id: number) => api.delete(`/admin/stores/${id}`),
   getStoreStats: (id: number) => api.get(`/admin/stores/${id}/stats`),
   addStoreAdmin: (id: number, data: any) => api.post(`/admin/stores/${id}/admins`, data),
   removeStoreAdmin: (id: number, adminUserId: number) => 
@@ -284,10 +285,12 @@ export const storesApi = {
   getProducts: (id: number) => api.get(`/stores/${id}/products`),
   getLocations: (id: number) => api.get(`/stores/${id}/locations`),
   getCustomization: (id: number) => api.get(`/stores/${id}/customization`),
+  getMyStores: () => api.get('/stores/my-stores'),
 }
 
 // Store Admin API
 export const storeAdminApi = {
+  getMyStores: () => api.get('/store-admin/my-stores'),
   getDashboard: (storeId: number) => api.get(`/store-admin/dashboard?storeId=${storeId}`),
   updateProfile: (storeId: number, data: any) => api.put(`/store-admin/profile?storeId=${storeId}`, data),
   addLocation: (storeId: number, data: any) => api.post(`/store-admin/locations?storeId=${storeId}`, data),
@@ -299,6 +302,34 @@ export const storeAdminApi = {
   updateCustomization: (storeId: number, data: any) => 
     api.put(`/store-admin/customization?storeId=${storeId}`, data),
   getOrders: (storeId: number) => api.get(`/store-admin/orders?storeId=${storeId}`),
-  getAnalytics: (storeId: number) => api.get(`/store-admin/analytics?storeId=${storeId}`),
+  getAnalytics: (storeId: number, fromDate?: string, toDate?: string) => 
+    api.get(`/store-admin/analytics?storeId=${storeId}`, { params: { fromDate, toDate } }),
+  getCustomization: (storeId: number) => 
+    api.get(`/store-admin/customization?storeId=${storeId}`),
+  uploadImage: (storeId: number, type: string, file: File) => {
+    const formData = new FormData()
+    formData.append('file', file)
+    return api.post(`/store-admin/upload-image?storeId=${storeId}&type=${type}`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    })
+  },
+  getProducts: (storeId: number) => 
+    api.get(`/store-admin/products?storeId=${storeId}`),
+  createProduct: (storeId: number, formData: FormData) => 
+    api.post(`/store-admin/products?storeId=${storeId}`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    }),
+  updateProduct: (storeId: number, productId: number, formData: FormData) => 
+    api.put(`/store-admin/products/${productId}?storeId=${storeId}`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    }),
+  deleteProduct: (storeId: number, productId: number) => 
+    api.delete(`/store-admin/products/${productId}?storeId=${storeId}`),
 }
 

@@ -38,6 +38,16 @@ import Stores from './pages/Stores'
 import StoreDetail from './pages/StoreDetail'
 import AdminRoute from './components/AdminRoute'
 import ProtectedRoute from './components/ProtectedRoute'
+import StoreAdminRoute from './components/StoreAdminRoute'
+import StoreAdminLayout from './pages/StoreAdminLayout'
+import StoreAdminDashboard from './pages/StoreAdminDashboard'
+import StoreAdminProfile from './pages/StoreAdminProfile'
+import StoreAdminLocations from './pages/StoreAdminLocations'
+import StoreAdminOrders from './pages/StoreAdminOrders'
+import StoreAdminAnalytics from './pages/StoreAdminAnalytics'
+import StoreAdminCustomization from './pages/StoreAdminCustomization'
+import StoreAdminProducts from './pages/StoreAdminProducts'
+import StoreAdminAddProduct from './pages/StoreAdminAddProduct'
 import Chatbot from './components/Chatbot'
 
 function App() {
@@ -109,6 +119,17 @@ function App() {
           <Route path="users" element={<AdminUsers />} />
           <Route path="platform" element={<AdminPlatform />} />
           <Route path="stores" element={<AdminStores />} />
+        </Route>
+        <Route path="store-admin" element={<StoreAdminRoute><StoreAdminLayout /></StoreAdminRoute>}>
+          <Route path="dashboard" element={<StoreAdminDashboard />} />
+          <Route path="products" element={<StoreAdminProducts />} />
+          <Route path="products/new" element={<StoreAdminAddProduct />} />
+          <Route path="products/:id/edit" element={<StoreAdminAddProduct />} />
+          <Route path="profile" element={<StoreAdminProfile />} />
+          <Route path="locations" element={<StoreAdminLocations />} />
+          <Route path="orders" element={<StoreAdminOrders />} />
+          <Route path="analytics" element={<StoreAdminAnalytics />} />
+          <Route path="customization" element={<StoreAdminCustomization />} />
         </Route>
       </Routes>
       <Toaster position="top-right" />

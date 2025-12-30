@@ -7,8 +7,8 @@ import { useAuthStore } from '../store/authStore'
 import toast from 'react-hot-toast'
 import { useQueryClient } from '@tanstack/react-query'
 import { useCurrency } from '../utils/currency'
-import ARQRCode from '../components/ar/ARQRCode'
-import ModelViewer3D from '../components/ar/ModelViewer3D'
+import QRCodeDisplay from '../components/ar/QRCodeDisplay'
+import Model3DViewer from '../components/ar/Model3DViewer'
 import { useDeviceDetect } from '../components/ar/hooks/useDeviceDetect'
 
 export default function ProductDetail() {
@@ -95,16 +95,12 @@ export default function ProductDetail() {
           {/* Desktop: Show 3D Viewer if model available, otherwise show images */}
           {isDesktop && product.rendablePath && show3DViewer ? (
             <div className="aspect-square rounded-xl overflow-hidden bg-gray-100 mb-4 relative">
-              <ModelViewer3D 
-                modelUrl={product.rendablePath} 
-                className="w-full h-full"
+              <Model3DViewer 
+                modelUrl={product.rendablePath}
+                productName={product.model}
+                productId={product.id.toString()}
+                onClose={() => setShow3DViewer(false)}
               />
-              <button
-                onClick={() => setShow3DViewer(false)}
-                className="absolute top-4 right-4 bg-white px-4 py-2 rounded-lg shadow-md hover:bg-gray-50 transition-colors z-10"
-              >
-                View Images
-              </button>
             </div>
           ) : (
             <>
@@ -364,12 +360,23 @@ export default function ProductDetail() {
 
       {/* QR Code Modal for Desktop */}
       {showQRCode && isDesktop && product.rendablePath && (
-        <ARQRCode
-          productId={product.id}
-          productName={product.model}
-          modelUrl={product.rendablePath}
-          onClose={() => setShowQRCode(false)}
-        />
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold">AR QR Code</h2>
+              <button
+                onClick={() => setShowQRCode(false)}
+                className="text-gray-400 hover:text-gray-600 text-2xl"
+              >
+                ×
+              </button>
+            </div>
+            <QRCodeDisplay
+              url={`${window.location.origin}/ar?productId=${product.id}&modelUrl=${encodeURIComponent(product.rendablePath)}`}
+              productName={product.model}
+            />
+          </div>
+        </div>
       )}
     </div>
   )
