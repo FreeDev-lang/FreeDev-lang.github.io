@@ -112,8 +112,8 @@ export default function Model3DViewer({
     if (!isModelViewerLoaded || !modelViewerRef.current) return
 
     const viewer = modelViewerRef.current as any
-    let checkInterval: NodeJS.Timeout | null = null
-    let timeoutId: NodeJS.Timeout | null = null
+    let checkInterval: number | null = null
+    let timeoutId: number | null = null
 
     const handleLoad = () => {
       console.log('Model loaded successfully')

@@ -10,7 +10,6 @@ import { useAuthStore } from '../store/authStore'
 export default function ARViewerPage() {
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
-  const { isMobile } = useDeviceDetect()
   const { isAuthenticated } = useAuthStore()
   
   const productId = searchParams.get('productId')
