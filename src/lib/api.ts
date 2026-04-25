@@ -2,6 +2,28 @@ import axios from 'axios'
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://localhost:5001/api'
 
+/**
+ * Full-page redirect to /login in a way that works on GitHub Pages.
+ * A request to /login returns 404 (no static file); the spa-github-pages
+ * pattern loads index.html as /?/login, then the script in index.html
+ * restores the path to /login for React Router.
+ */
+function redirectToLoginPage() {
+  const basePath = (import.meta.env.BASE_URL || '/').replace(/\/$/, '')
+  const pathPrefix = basePath === '' ? '/' : `${basePath}/`
+  window.location.replace(`${window.location.origin}${pathPrefix}?/login`)
+}
+
+function clearAuthSessionStorage() {
+  localStorage.removeItem('token')
+  localStorage.removeItem('user')
+  try {
+    localStorage.removeItem('auth-storage')
+  } catch {
+    /* ignore */
+  }
+}
+
 const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
@@ -23,9 +45,8 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem('token')
-      localStorage.removeItem('user')
-      window.location.href = '/login'
+      clearAuthSessionStorage()
+      redirectToLoginPage()
     }
     return Promise.reject(error)
   }
