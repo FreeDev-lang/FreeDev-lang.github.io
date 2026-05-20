@@ -20,6 +20,9 @@ export default function AdminProducts() {
       queryClient.invalidateQueries({ queryKey: ['admin-products'] })
       toast.success('Product deleted')
     },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Failed to delete product')
+    },
   })
 
   if (isLoading) {
