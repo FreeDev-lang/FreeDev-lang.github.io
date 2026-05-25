@@ -139,8 +139,8 @@ export default function HeroSection() {
           aria-hidden
         />
         <div
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-30 mix-blend-multiply"
-          style={{ backgroundImage: 'url(/hero-background.svg)' }}
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+          style={{ backgroundImage: 'url(/back.jpg)' }}
           aria-hidden
         />
         <div
