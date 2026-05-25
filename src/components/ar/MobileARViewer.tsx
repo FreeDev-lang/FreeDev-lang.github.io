@@ -12,14 +12,6 @@ interface MobileARViewerProps {
   onClose: () => void
 }
 
-declare global {
-  namespace JSX {
-    interface IntrinsicElements {
-      'model-viewer': any
-    }
-  }
-}
-
 export default function MobileARViewer({ productId, modelUrl, onClose }: MobileARViewerProps) {
   const { data: product } = useQuery({
     queryKey: ['product', productId],
@@ -68,7 +60,7 @@ export default function MobileARViewer({ productId, modelUrl, onClose }: MobileA
           <p className="text-gray-600 mb-6">This product doesn't have a 3D model for AR viewing.</p>
           <button
             onClick={onClose}
-            className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700"
+            className="btn btn-primary"
           >
             Go Back
           </button>
@@ -91,7 +83,7 @@ export default function MobileARViewer({ productId, modelUrl, onClose }: MobileA
           <div className="flex items-center gap-2">
             <button
               onClick={handleAddToCart}
-              className="p-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+              className="btn btn-primary btn-sm p-2"
               title="Add to Cart"
             >
               <ShoppingCart className="w-5 h-5" />
@@ -125,7 +117,7 @@ export default function MobileARViewer({ productId, modelUrl, onClose }: MobileA
             max-camera-orbit="auto auto 120%"
           >
             <div slot="ar-button" className="absolute bottom-20 left-1/2 transform -translate-x-1/2">
-              <button className="px-6 py-3 bg-green-600 text-white rounded-full font-semibold shadow-lg hover:bg-green-700 transition-colors">
+              <button type="button" className="btn btn-primary btn-pill font-semibold">
                 View in Your Space
               </button>
             </div>

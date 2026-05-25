@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useOutletContext } from 'react-router-dom'
 import { storeAdminApi } from '../lib/api'
 import { Package, DollarSign, ShoppingCart, TrendingUp, Clock } from 'lucide-react'
@@ -22,13 +22,7 @@ export default function StoreAdminDashboard() {
   const [dashboardData, setDashboardData] = useState<DashboardStats | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
-  useEffect(() => {
-    if (storeId) {
-      loadDashboard()
-    }
-  }, [storeId])
-
-  const loadDashboard = async () => {
+  const loadDashboard = useCallback(async () => {
     if (!storeId) return
 
     setIsLoading(true)
@@ -41,7 +35,13 @@ export default function StoreAdminDashboard() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [storeId])
+
+  useEffect(() => {
+    if (storeId) {
+      loadDashboard()
+    }
+  }, [storeId, loadDashboard])
 
   if (isLoading) {
     return (

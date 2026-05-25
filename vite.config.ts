@@ -61,7 +61,21 @@ export default defineConfig({
           return `assets/[name]-[hash].[ext]`;
         },
         // Ensure proper module format
-        format: 'es'
+        format: 'es',
+        manualChunks(id) {
+          if (id.includes('node_modules/three') || id.includes('@react-three/fiber') || id.includes('@react-three/drei') || id.includes('@react-three/xr')) {
+            return 'three'
+          }
+          if (id.includes('node_modules/framer-motion')) {
+            return 'motion'
+          }
+          if (id.includes('node_modules/@tanstack')) {
+            return 'query'
+          }
+          if (id.includes('node_modules/lucide-react')) {
+            return 'icons'
+          }
+        },
       }
     },
     // Ensure proper MIME types

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useOutletContext } from 'react-router-dom'
 import { storeAdminApi } from '../lib/api'
 import { MapPin, Plus, Edit, Trash2, X, Phone, Mail, Navigation } from 'lucide-react'
@@ -41,13 +41,7 @@ export default function StoreAdminLocations() {
     isPrimary: false
   })
 
-  useEffect(() => {
-    if (storeId) {
-      loadLocations()
-    }
-  }, [storeId])
-
-  const loadLocations = async () => {
+  const loadLocations = useCallback(async () => {
     if (!storeId) return
 
     setIsLoading(true)
@@ -60,7 +54,13 @@ export default function StoreAdminLocations() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [storeId])
+
+  useEffect(() => {
+    if (storeId) {
+      loadLocations()
+    }
+  }, [storeId, loadLocations])
 
   const handleOpenModal = (location?: Location) => {
     if (location) {

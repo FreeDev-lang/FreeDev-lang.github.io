@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useOutletContext, Link } from 'react-router-dom'
 import { storeAdminApi } from '../lib/api'
 import { Package, Plus, Edit, Trash2, Eye, Search } from 'lucide-react'
@@ -15,13 +15,7 @@ export default function StoreAdminProducts() {
   const [searchQuery, setSearchQuery] = useState('')
   const [categoryFilter, setCategoryFilter] = useState('')
 
-  useEffect(() => {
-    if (storeId) {
-      loadProducts()
-    }
-  }, [storeId])
-
-  const loadProducts = async () => {
+  const loadProducts = useCallback(async () => {
     if (!storeId) return
 
     setIsLoading(true)
@@ -34,7 +28,13 @@ export default function StoreAdminProducts() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [storeId])
+
+  useEffect(() => {
+    if (storeId) {
+      loadProducts()
+    }
+  }, [storeId, loadProducts])
 
   const deleteMutation = useMutation({
     mutationFn: (productId: number) => storeAdminApi.deleteProduct(storeId!, productId),
