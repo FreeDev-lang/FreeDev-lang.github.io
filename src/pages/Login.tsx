@@ -6,6 +6,7 @@ import toast from 'react-hot-toast'
 import GoogleLoginButton from '../components/auth/GoogleLoginButton'
 import FacebookLoginButton from '../components/auth/FacebookLoginButton'
 import InstagramLoginButton from '../components/auth/InstagramLoginButton'
+import BrandLogo from '../components/BrandLogo'
 
 export default function Login() {
   const navigate = useNavigate()
@@ -23,37 +24,32 @@ export default function Login() {
     }
   }
 
-
   const handleGuestLogin = async () => {
     try {
       const response = await authApi.createGuest()
       setAuth(response.data.user, response.data.token)
       toast.success('Browsing as guest')
       navigate('/')
-    } catch (error: any) {
+    } catch {
       toast.error('Failed to create guest session')
     }
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-50 to-primary-100 py-12 px-4">
-      <div className="max-w-md w-full">
-        <div className="text-center mb-8">
-          <div className="flex items-center justify-center mb-4">
-            <div className="w-16 h-16 bg-gradient-to-br from-primary-500 to-primary-700 rounded-xl flex items-center justify-center">
-              <span className="text-white font-bold text-2xl">F</span>
-            </div>
+    <div className="section flex min-h-[calc(100vh-4rem)] items-center justify-center bg-secondary-50 py-12">
+      <div className="section-inner w-full max-w-md">
+        <div className="mb-8 text-center">
+          <div className="mb-4 flex justify-center">
+            <BrandLogo className="text-3xl" />
           </div>
-          <h1 className="text-3xl font-bold text-gray-900">Welcome to Fria</h1>
-          <p className="text-gray-600 mt-2">Sign in to your account</p>
+          <h1 className="text-h2 text-neutral-900">Welcome back</h1>
+          <p className="mt-2 text-body text-neutral-600">Sign in to your Fria account</p>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-xl p-8">
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+        <div className="card p-8">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Email
-              </label>
+              <label className="mb-2 block text-body-sm font-medium text-neutral-700">Email</label>
               <input
                 type="email"
                 {...register('email', { required: 'Email is required' })}
@@ -61,14 +57,12 @@ export default function Login() {
                 placeholder="you@example.com"
               />
               {errors.email && (
-                <p className="text-red-500 text-sm mt-1">{errors.email.message as string}</p>
+                <p className="mt-1 text-caption text-red-600">{errors.email.message as string}</p>
               )}
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Password
-              </label>
+              <label className="mb-2 block text-body-sm font-medium text-neutral-700">Password</label>
               <input
                 type="password"
                 {...register('password', { required: 'Password is required' })}
@@ -76,11 +70,11 @@ export default function Login() {
                 placeholder="••••••••"
               />
               {errors.password && (
-                <p className="text-red-500 text-sm mt-1">{errors.password.message as string}</p>
+                <p className="mt-1 text-caption text-red-600">{errors.password.message as string}</p>
               )}
             </div>
 
-            <button type="submit" className="w-full btn btn-primary">
+            <button type="submit" className="btn btn-primary w-full">
               Sign In
             </button>
           </form>
@@ -88,10 +82,10 @@ export default function Login() {
           <div className="mt-6">
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300"></div>
+                <div className="w-full border-t border-secondary-200" />
               </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-gray-500">Or continue with</span>
+              <div className="relative flex justify-center text-body-sm">
+                <span className="bg-white px-2 text-neutral-500">Or continue with</span>
               </div>
             </div>
 
@@ -104,16 +98,17 @@ export default function Login() {
 
           <div className="mt-6 text-center">
             <button
+              type="button"
               onClick={handleGuestLogin}
-              className="text-sm text-primary-600 hover:text-primary-700"
+              className="btn btn-ghost text-body-sm"
             >
               Continue as Guest
             </button>
           </div>
 
-          <div className="mt-6 text-center text-sm">
-            <span className="text-gray-600">Don't have an account? </span>
-            <Link to="/register" className="text-primary-600 hover:text-primary-700 font-medium">
+          <div className="mt-6 text-center text-body-sm">
+            <span className="text-neutral-600">Don&apos;t have an account? </span>
+            <Link to="/register" className="font-medium text-primary-600 hover:text-primary-700">
               Sign up
             </Link>
           </div>
@@ -122,4 +117,3 @@ export default function Login() {
     </div>
   )
 }
-

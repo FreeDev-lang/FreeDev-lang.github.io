@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { Send, X, Bot, User } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { fabEntrance, floatingPanelVariants, overlayMotion } from '../utils/motion'
 
 interface Message {
   id: string
@@ -10,15 +11,21 @@ interface Message {
 }
 
 const predefinedResponses: Record<string, string> = {
-  'hello': 'Hello! How can I help you today?',
-  'hi': 'Hi there! What can I assist you with?',
-  'help': 'I can help you with:\n- Finding products\n- Order information\n- Shipping questions\n- Returns and refunds\n- Account issues\n\nWhat would you like to know?',
-  'products': 'You can browse our products by visiting the Products page. We have a wide selection of furniture items. Would you like to know about a specific category?',
-  'shipping': 'We offer shipping to most locations. Shipping costs and delivery times vary by location. You can check shipping options during checkout.',
-  'return': 'We have a 30-day return policy. Items must be in original condition. Please contact support for return authorization.',
-  'price': 'Prices vary by product. You can see detailed pricing on each product page. We also have sales and discounts available!',
-  'order': 'To check your order status, please visit the Orders page in your account. You can also contact support with your order number.',
-  'default': 'I\'m here to help! You can ask me about:\n- Products and categories\n- Orders and shipping\n- Returns and refunds\n- Account questions\n\nHow can I assist you?'
+  hello: 'Hello! How can I help you today?',
+  hi: 'Hi there! What can I assist you with?',
+  help: 'I can help you with:\n- Finding products\n- Order information\n- Shipping questions\n- Returns and refunds\n- Account issues\n\nWhat would you like to know?',
+  products:
+    'You can browse our products by visiting the Products page. We have a wide selection of furniture items. Would you like to know about a specific category?',
+  shipping:
+    'We offer shipping to most locations. Shipping costs and delivery times vary by location. You can check shipping options during checkout.',
+  return:
+    'We have a 30-day return policy. Items must be in original condition. Please contact support for return authorization.',
+  price:
+    'Prices vary by product. You can see detailed pricing on each product page. We also have sales and discounts available!',
+  order:
+    'To check your order status, please visit the Orders page in your account. You can also contact support with your order number.',
+  default:
+    "I'm here to help! You can ask me about:\n- Products and categories\n- Orders and shipping\n- Returns and refunds\n- Account questions\n\nHow can I assist you?",
 }
 
 export default function Chatbot() {
@@ -26,10 +33,10 @@ export default function Chatbot() {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
-      text: 'Hello! I\'m your Fria assistant. How can I help you today?',
+      text: "Hello! I'm Fria Assistant. How can I help you today?",
       sender: 'bot',
-      timestamp: new Date()
-    }
+      timestamp: new Date(),
+    },
   ])
   const [input, setInput] = useState('')
   const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -40,31 +47,30 @@ export default function Chatbot() {
 
   const getBotResponse = (userMessage: string): string => {
     const lowerMessage = userMessage.toLowerCase().trim()
-    
-    // Check for keywords
+
     if (lowerMessage.includes('hello') || lowerMessage.includes('hi')) {
-      return predefinedResponses['hello']
+      return predefinedResponses.hello
     }
     if (lowerMessage.includes('help')) {
-      return predefinedResponses['help']
+      return predefinedResponses.help
     }
     if (lowerMessage.includes('product')) {
-      return predefinedResponses['products']
+      return predefinedResponses.products
     }
     if (lowerMessage.includes('shipping') || lowerMessage.includes('delivery')) {
-      return predefinedResponses['shipping']
+      return predefinedResponses.shipping
     }
     if (lowerMessage.includes('return') || lowerMessage.includes('refund')) {
-      return predefinedResponses['return']
+      return predefinedResponses.return
     }
     if (lowerMessage.includes('price') || lowerMessage.includes('cost')) {
-      return predefinedResponses['price']
+      return predefinedResponses.price
     }
     if (lowerMessage.includes('order')) {
-      return predefinedResponses['order']
+      return predefinedResponses.order
     }
-    
-    return predefinedResponses['default']
+
+    return predefinedResponses.default
   }
 
   const handleSend = () => {
@@ -74,21 +80,20 @@ export default function Chatbot() {
       id: Date.now().toString(),
       text: input,
       sender: 'user',
-      timestamp: new Date()
+      timestamp: new Date(),
     }
 
-    setMessages(prev => [...prev, userMessage])
+    setMessages((prev) => [...prev, userMessage])
     setInput('')
 
-    // Simulate bot thinking
     setTimeout(() => {
       const botResponse: Message = {
         id: (Date.now() + 1).toString(),
         text: getBotResponse(input),
         sender: 'bot',
-        timestamp: new Date()
+        timestamp: new Date(),
       }
-      setMessages(prev => [...prev, botResponse])
+      setMessages((prev) => [...prev, botResponse])
     }, 500)
   }
 
@@ -101,107 +106,115 @@ export default function Chatbot() {
 
   return (
     <>
-      {/* Chat Button */}
       {!isOpen && (
         <motion.button
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
+          variants={fabEntrance}
+          initial="hidden"
+          animate="visible"
           onClick={() => setIsOpen(true)}
-          className="fixed bottom-6 right-6 w-14 h-14 bg-primary-600 text-white rounded-full shadow-lg hover:bg-primary-700 transition-colors flex items-center justify-center z-50"
+          className="btn btn-primary fixed bottom-6 right-6 z-50 h-14 w-14 rounded-pill shadow-card-hover"
           aria-label="Open chatbot"
         >
-          <Bot className="w-6 h-6" />
+          <Bot className="h-6 w-6" />
         </motion.button>
       )}
 
-      {/* Chat Window */}
       <AnimatePresence>
         {isOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: 20, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 20, scale: 0.95 }}
-            className="fixed bottom-6 right-6 w-96 h-[500px] bg-white rounded-xl shadow-2xl flex flex-col z-50 border border-gray-200"
-          >
-            {/* Header */}
-            <div className="bg-primary-600 text-white p-4 rounded-t-xl flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Bot className="w-5 h-5" />
-                <h3 className="font-semibold">Fria Assistant</h3>
-              </div>
-              <button
-                onClick={() => setIsOpen(false)}
-                className="hover:bg-primary-700 rounded-full p-1 transition-colors"
-                aria-label="Close chatbot"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-4">
-              {messages.map((message) => (
-                <div
-                  key={message.id}
-                  className={`flex gap-2 ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
-                >
-                  {message.sender === 'bot' && (
-                    <div className="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center flex-shrink-0">
-                      <Bot className="w-4 h-4 text-primary-600" />
-                    </div>
-                  )}
-                  <div
-                    className={`max-w-[80%] rounded-lg px-4 py-2 ${
-                      message.sender === 'user'
-                        ? 'bg-primary-600 text-white'
-                        : 'bg-gray-100 text-gray-900'
-                    }`}
-                  >
-                    <p className="text-sm whitespace-pre-line">{message.text}</p>
-                    <p className={`text-xs mt-1 ${
-                      message.sender === 'user' ? 'text-primary-100' : 'text-gray-500'
-                    }`}>
-                      {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    </p>
-                  </div>
-                  {message.sender === 'user' && (
-                    <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center flex-shrink-0">
-                      <User className="w-4 h-4 text-gray-600" />
-                    </div>
-                  )}
+          <>
+            <motion.button
+              type="button"
+              aria-label="Close chat overlay"
+              {...overlayMotion}
+              className="fixed inset-0 z-40 bg-neutral-900/20 backdrop-blur-[2px] md:hidden"
+              onClick={() => setIsOpen(false)}
+            />
+            <motion.div
+              variants={floatingPanelVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+              className="surface-overlay fixed bottom-6 right-6 z-50 flex h-[500px] w-[min(100vw-2rem,24rem)] flex-col overflow-hidden"
+            >
+              <div className="flex items-center justify-between rounded-t-modal bg-primary-600 p-4 text-white">
+                <div className="flex items-center gap-2">
+                  <Bot className="h-5 w-5" />
+                  <h3 className="text-body-sm font-semibold">Fria Assistant</h3>
                 </div>
-              ))}
-              <div ref={messagesEndRef} />
-            </div>
-
-            {/* Input */}
-            <div className="border-t border-gray-200 p-4">
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyPress={handleKeyPress}
-                  placeholder="Type your message..."
-                  className="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500"
-                />
                 <button
-                  onClick={handleSend}
-                  className="bg-primary-600 text-white rounded-lg px-4 py-2 hover:bg-primary-700 transition-colors flex items-center justify-center"
-                  aria-label="Send message"
+                  type="button"
+                  onClick={() => setIsOpen(false)}
+                  className="rounded-pill p-1 transition-colors duration-brand hover:bg-primary-700"
+                  aria-label="Close chatbot"
                 >
-                  <Send className="w-5 h-5" />
+                  <X className="h-5 w-5" />
                 </button>
               </div>
-            </div>
-          </motion.div>
+
+              <div className="flex-1 space-y-4 overflow-y-auto p-4">
+                {messages.map((message) => (
+                  <div
+                    key={message.id}
+                    className={`flex gap-2 ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+                  >
+                    {message.sender === 'bot' && (
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-pill bg-primary-100">
+                        <Bot className="h-4 w-4 text-primary-600" />
+                      </div>
+                    )}
+                    <div
+                      className={`max-w-[80%] rounded-btn px-4 py-2 ${
+                        message.sender === 'user'
+                          ? 'bg-primary-600 text-white'
+                          : 'bg-primary-50 text-neutral-900'
+                      }`}
+                    >
+                      <p className="whitespace-pre-line text-body-sm">{message.text}</p>
+                      <p
+                        className={`mt-1 text-caption ${
+                          message.sender === 'user' ? 'text-primary-100' : 'text-neutral-500'
+                        }`}
+                      >
+                        {message.timestamp.toLocaleTimeString([], {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </p>
+                    </div>
+                    {message.sender === 'user' && (
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-pill bg-primary-100">
+                        <User className="h-4 w-4 text-primary-700" />
+                      </div>
+                    )}
+                  </div>
+                ))}
+                <div ref={messagesEndRef} />
+              </div>
+
+              <div className="border-t border-secondary-200 p-4">
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    onKeyPress={handleKeyPress}
+                    placeholder="Type your message..."
+                    className="input min-w-0 flex-1"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleSend}
+                    className="btn btn-primary shrink-0 px-4"
+                    aria-label="Send message"
+                  >
+                    <Send className="h-5 w-5" />
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </>
         )}
       </AnimatePresence>
     </>
   )
 }
-
-
-
-
-

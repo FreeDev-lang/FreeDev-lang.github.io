@@ -1,7 +1,7 @@
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom'
 import { LayoutDashboard, Store, MapPin, FileText, BarChart3, Settings, LogOut, Eye, Package } from 'lucide-react'
 import { useAuthStore } from '../store/authStore'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { storeAdminApi } from '../lib/api'
 
 interface Store {
@@ -19,18 +19,16 @@ export default function StoreAdminLayout() {
   const [selectedStoreId, setSelectedStoreId] = useState<number | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
-  useEffect(() => {
-    loadStores()
-  }, [])
-
-  const loadStores = async () => {
+  const loadStores = useCallback(async () => {
     try {
       const response = await storeAdminApi.getMyStores()
       setStores(response.data)
-      if (response.data.length > 0 && !selectedStoreId) {
-        setSelectedStoreId(response.data[0].id)
-        // Store selected store in sessionStorage
-        sessionStorage.setItem('selectedStoreId', response.data[0].id.toString())
+      if (response.data.length > 0) {
+        setSelectedStoreId((current) => {
+          if (current) return current
+          sessionStorage.setItem('selectedStoreId', response.data[0].id.toString())
+          return response.data[0].id
+        })
       } else {
         const stored = sessionStorage.getItem('selectedStoreId')
         if (stored) {
@@ -42,7 +40,11 @@ export default function StoreAdminLayout() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    loadStores()
+  }, [loadStores])
 
   const handleStoreChange = (storeId: number) => {
     setSelectedStoreId(storeId)

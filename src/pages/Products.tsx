@@ -3,11 +3,13 @@ import { useSearchParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { productsApi } from '../lib/api'
 import ProductCard from '../components/ProductCard'
-import { Filter, X } from 'lucide-react'
+import FiltersSidebar, { MobileFilterToggle, type ProductFilters } from '../components/FiltersSidebar'
+import { X } from 'lucide-react'
+import { skeletonClassName } from '../utils/motion'
 
 export default function Products() {
   const [searchParams] = useSearchParams()
-  const [filters, setFilters] = useState({
+  const [filters, setFilters] = useState<ProductFilters>({
     searchTerm: searchParams.get('search') || '',
     category: searchParams.get('category') || '',
     minPrice: '',
@@ -27,7 +29,6 @@ export default function Products() {
   const { data: searchResults, isLoading } = useQuery({
     queryKey: ['products-search', filters],
     queryFn: () => {
-      // Clean up the filters - convert empty strings to null/undefined for optional numeric fields
       const cleanFilters: any = {
         ...filters,
         searchTerm: filters.searchTerm || null,
@@ -35,7 +36,6 @@ export default function Products() {
         minPrice: filters.minPrice ? parseFloat(filters.minPrice) : null,
         maxPrice: filters.maxPrice ? parseFloat(filters.maxPrice) : null,
       }
-      // Remove null/undefined values for optional fields only
       const keysToKeep = ['sortBy', 'sortOrder', 'page', 'pageSize']
       Object.keys(cleanFilters).forEach((key: string) => {
         const value = (cleanFilters as any)[key]
@@ -65,140 +65,75 @@ export default function Products() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="flex flex-col md:flex-row gap-8">
-        {/* Filters Sidebar */}
-        <aside className={`md:w-64 ${showFilters ? 'block' : 'hidden md:block'}`}>
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 sticky top-20">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold">Filters</h2>
-              <button
-                onClick={clearFilters}
-                className="text-sm text-primary-600 hover:text-primary-700"
-              >
-                Clear All
-              </button>
-            </div>
+    <div className="section-inner py-8 md:py-10">
+      <div className="flex flex-col gap-8 md:flex-row">
+        <FiltersSidebar
+          filters={filters}
+          categories={categories}
+          showFilters={showFilters}
+          onFilterChange={handleFilterChange}
+          onClearAll={clearFilters}
+        />
 
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Category
-                </label>
-                <select
-                  value={filters.category}
-                  onChange={(e) => handleFilterChange('category', e.target.value)}
-                  className="input"
-                >
-                  <option value="">All Categories</option>
-                  {categories?.map((cat: string) => (
-                    <option key={cat} value={cat}>{cat}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Price Range
-                </label>
-                <div className="grid grid-cols-2 gap-2">
-                  <input
-                    type="number"
-                    placeholder="Min"
-                    value={filters.minPrice}
-                    onChange={(e) => handleFilterChange('minPrice', e.target.value)}
-                    className="input"
-                  />
-                  <input
-                    type="number"
-                    placeholder="Max"
-                    value={filters.maxPrice}
-                    onChange={(e) => handleFilterChange('maxPrice', e.target.value)}
-                    className="input"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Sort By
-                </label>
-                <select
-                  value={filters.sortBy}
-                  onChange={(e) => handleFilterChange('sortBy', e.target.value)}
-                  className="input"
-                >
-                  <option value="date">Newest</option>
-                  <option value="price">Price</option>
-                  <option value="name">Name</option>
-                  <option value="rating">Rating</option>
-                  <option value="views">Popularity</option>
-                </select>
-              </div>
-            </div>
-          </div>
-        </aside>
-
-        {/* Products Grid */}
         <div className="flex-1">
-          <div className="flex items-center justify-between mb-6">
+          <div className="mb-8 flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Products</h1>
+              <h1 className="text-h1-md text-neutral-900">Products</h1>
               {searchResults && (
-                <p className="text-gray-600 mt-1">
+                <p className="mt-1 text-body text-neutral-500">
                   {searchResults.totalCount} products found
                 </p>
               )}
             </div>
-            <button
-              onClick={() => setShowFilters(!showFilters)}
-              className="md:hidden btn btn-outline flex items-center"
-            >
-              <Filter className="w-4 h-4 mr-2" />
-              Filters
-            </button>
+            <MobileFilterToggle
+              showFilters={showFilters}
+              onToggle={() => setShowFilters(!showFilters)}
+            />
           </div>
 
           {filters.searchTerm && (
             <div className="mb-4 flex items-center gap-2">
-              <span className="text-sm text-gray-600">Search: "{filters.searchTerm}"</span>
+              <span className="text-body-sm text-neutral-600">Search: "{filters.searchTerm}"</span>
               <button
+                type="button"
                 onClick={() => handleFilterChange('searchTerm', '')}
-                className="text-primary-600 hover:text-primary-700"
+                className="btn-icon shrink-0"
+                aria-label="Clear search"
               >
-                <X className="w-4 h-4" />
+                <X className="h-4 w-4" />
               </button>
             </div>
           )}
 
           {isLoading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="card-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
               {[...Array(6)].map((_, i) => (
-                <div key={i} className="bg-gray-200 rounded-xl h-96 animate-pulse" />
+                <div key={i} className={`h-96 ${skeletonClassName}`} />
               ))}
             </div>
           ) : searchResults && searchResults.items.length > 0 ? (
             <>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="card-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                 {searchResults.items.map((product: any) => (
                   <ProductCard key={product.id} product={product} />
                 ))}
               </div>
 
-              {/* Pagination */}
               {searchResults.totalPages > 1 && (
                 <div className="mt-8 flex justify-center gap-2">
                   <button
+                    type="button"
                     onClick={() => handleFilterChange('page', filters.page - 1)}
                     disabled={!searchResults.hasPreviousPage}
                     className="btn btn-outline disabled:opacity-50"
                   >
                     Previous
                   </button>
-                  <span className="flex items-center px-4">
+                  <span className="flex items-center px-4 text-body-sm text-neutral-600">
                     Page {filters.page} of {searchResults.totalPages}
                   </span>
                   <button
+                    type="button"
                     onClick={() => handleFilterChange('page', filters.page + 1)}
                     disabled={!searchResults.hasNextPage}
                     className="btn btn-outline disabled:opacity-50"
@@ -209,8 +144,8 @@ export default function Products() {
               )}
             </>
           ) : (
-            <div className="text-center py-12">
-              <p className="text-gray-500">No products found</p>
+            <div className="py-12 text-center">
+              <p className="text-body text-neutral-500">No products found</p>
             </div>
           )}
         </div>
@@ -218,4 +153,3 @@ export default function Products() {
     </div>
   )
 }
-

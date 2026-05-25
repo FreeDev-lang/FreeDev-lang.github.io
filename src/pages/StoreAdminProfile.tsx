@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useOutletContext } from 'react-router-dom'
 import { storeAdminApi } from '../lib/api'
 import { Save } from 'lucide-react'
@@ -19,13 +19,7 @@ export default function StoreAdminProfile() {
     bannerUrl: ''
   })
 
-  useEffect(() => {
-    if (storeId) {
-      loadStoreData()
-    }
-  }, [storeId])
-
-  const loadStoreData = async () => {
+  const loadStoreData = useCallback(async () => {
     if (!storeId) return
 
     setIsLoading(true)
@@ -46,7 +40,13 @@ export default function StoreAdminProfile() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [storeId])
+
+  useEffect(() => {
+    if (storeId) {
+      loadStoreData()
+    }
+  }, [storeId, loadStoreData])
 
   const handleLogoUpload = async (file: File) => {
     try {

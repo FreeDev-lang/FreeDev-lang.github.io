@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useOutletContext } from 'react-router-dom'
 import { storeAdminApi } from '../lib/api'
 import { BarChart3, DollarSign, ShoppingCart, TrendingUp, Calendar } from 'lucide-react'
@@ -42,13 +42,7 @@ export default function StoreAdminAnalytics() {
   const [fromDate, setFromDate] = useState('')
   const [toDate, setToDate] = useState('')
 
-  useEffect(() => {
-    if (storeId) {
-      loadAnalytics()
-    }
-  }, [storeId, fromDate, toDate])
-
-  const loadAnalytics = async () => {
+  const loadAnalytics = useCallback(async () => {
     if (!storeId) return
 
     setIsLoading(true)
@@ -65,7 +59,13 @@ export default function StoreAdminAnalytics() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [storeId, fromDate, toDate])
+
+  useEffect(() => {
+    if (storeId) {
+      loadAnalytics()
+    }
+  }, [storeId, loadAnalytics])
 
   const getMonthName = (month: number) => {
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']

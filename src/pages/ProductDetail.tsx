@@ -1,15 +1,33 @@
 import { useParams, Link } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
-import { useState } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useState, type ReactNode } from 'react'
 import { productsApi, cartApi, wishlistApi, reviewsApi } from '../lib/api'
 import { ShoppingCart, Heart, Star, ArrowLeft, Package, Truck, QrCode, Box } from 'lucide-react'
 import { useAuthStore } from '../store/authStore'
 import toast from 'react-hot-toast'
-import { useQueryClient } from '@tanstack/react-query'
 import { useCurrency } from '../utils/currency'
 import ARQRCode from '../components/ar/ARQRCode'
 import ModelViewer3D from '../components/ar/ModelViewer3D'
 import { useDeviceDetect } from '../components/ar/hooks/useDeviceDetect'
+
+function SectionDivider() {
+  return <div className="divider" aria-hidden />
+}
+
+function DetailSection({
+  title,
+  children,
+}: {
+  title?: string
+  children: ReactNode
+}) {
+  return (
+    <section className="space-y-3">
+      {title && <h3 className="text-h3 text-neutral-900">{title}</h3>}
+      {children}
+    </section>
+  )
+}
 
 export default function ProductDetail() {
   const { id } = useParams()
@@ -17,21 +35,21 @@ export default function ProductDetail() {
   const [quantity, setQuantity] = useState(1)
   const [isWishlisted, setIsWishlisted] = useState(false)
   const [showQRCode, setShowQRCode] = useState(false)
+  const [show3DViewer, setShow3DViewer] = useState(false)
   const { isAuthenticated } = useAuthStore()
   const { formatCurrency } = useCurrency()
   const queryClient = useQueryClient()
   const { isDesktop } = useDeviceDetect()
-  const [show3DViewer, setShow3DViewer] = useState(false)
 
   const { data: product, isLoading } = useQuery({
     queryKey: ['product', id],
-    queryFn: () => productsApi.getById(Number(id)).then(res => res.data),
+    queryFn: () => productsApi.getById(Number(id)).then((res) => res.data),
     enabled: !!id,
   })
 
   const { data: reviews } = useQuery({
     queryKey: ['reviews', id],
-    queryFn: () => reviewsApi.getByProduct(Number(id)).then(res => res.data),
+    queryFn: () => reviewsApi.getByProduct(Number(id)).then((res) => res.data),
     enabled: !!id,
   })
 
@@ -72,70 +90,84 @@ export default function ProductDetail() {
   }
 
   if (isLoading) {
-    return <div className="max-w-7xl mx-auto px-4 py-8">Loading...</div>
+    return (
+      <div className="section-inner py-12">
+        <p className="text-body text-neutral-500">Loading...</p>
+      </div>
+    )
   }
 
   if (!product) {
-    return <div className="max-w-7xl mx-auto px-4 py-8">Product not found</div>
+    return (
+      <div className="section-inner py-12">
+        <p className="text-body text-neutral-500">Product not found</p>
+      </div>
+    )
   }
 
   const price = product.discountPrice || product.price
   const originalPrice = product.discountPrice ? product.price : null
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <Link to="/products" className="inline-flex items-center text-primary-600 hover:text-primary-700 mb-6">
-        <ArrowLeft className="w-4 h-4 mr-2" />
+    <div className="section-inner py-8 md:py-10">
+      <Link to="/products" className="nav-link mb-8 inline-flex items-center gap-2">
+        <ArrowLeft className="h-4 w-4" />
         Back to Products
       </Link>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Images / 3D Viewer */}
-        <div>
-          {/* Desktop: Show 3D Viewer if model available, otherwise show images */}
+      <div className="grid grid-cols-1 gap-10 lg:grid-cols-2 lg:gap-12">
+        {/* Gallery / 3D viewer */}
+        <div className="space-y-4">
           {isDesktop && product.rendablePath && show3DViewer ? (
-            <div className="aspect-square rounded-xl overflow-hidden bg-gray-100 mb-4 relative">
-              <ModelViewer3D 
-                modelUrl={product.rendablePath} 
-                className="w-full h-full"
-              />
+            <div className="relative aspect-square overflow-hidden rounded-card bg-secondary-100 shadow-card-default">
+              <ModelViewer3D modelUrl={product.rendablePath} className="h-full w-full" />
               <button
+                type="button"
                 onClick={() => setShow3DViewer(false)}
-                className="absolute top-4 right-4 bg-white px-4 py-2 rounded-lg shadow-md hover:bg-gray-50 transition-colors z-10"
+                className="btn btn-secondary btn-sm absolute right-4 top-4 z-10 shadow-card-default"
               >
                 View Images
               </button>
             </div>
           ) : (
             <>
-              <div className="aspect-square rounded-xl overflow-hidden bg-[#F5F5F5] mb-4 relative">
+              <div className="relative aspect-square overflow-hidden rounded-card bg-secondary-100 shadow-card-default">
                 {product.images && product.images.length > 0 ? (
                   <img
                     src={product.images[0]}
                     alt={product.model}
-                    className="w-full h-full object-cover"
+                    className="h-full w-full object-cover"
                   />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center text-gray-400">
+                  <div className="flex h-full w-full items-center justify-center text-body-sm text-neutral-400">
                     No Image
                   </div>
                 )}
-                {/* 3D View Toggle Button (Desktop only) */}
+
                 {isDesktop && product.rendablePath && (
                   <button
+                    type="button"
                     onClick={() => setShow3DViewer(true)}
-                    className="absolute bottom-4 right-4 bg-green-600 text-white px-4 py-2 rounded-lg shadow-lg hover:bg-green-700 transition-colors flex items-center gap-2"
+                    className="btn btn-secondary absolute bottom-4 right-4 gap-2 shadow-card-default"
                   >
-                    <Box className="w-5 h-5" />
+                    <Box className="h-5 w-5" />
                     View 3D Model
                   </button>
                 )}
               </div>
+
               {product.images && product.images.length > 1 && (
-                <div className="grid grid-cols-4 gap-2">
+                <div className="grid grid-cols-4 gap-3">
                   {product.images.slice(1, 5).map((img: string, idx: number) => (
-                    <div key={idx} className="aspect-square rounded-lg overflow-hidden bg-gray-100">
-                      <img src={img} alt={`${product.model} ${idx + 2}`} className="w-full h-full object-cover" />
+                    <div
+                      key={idx}
+                      className="aspect-square overflow-hidden rounded-btn bg-secondary-100 ring-2 ring-transparent ring-offset-2 transition-all duration-brand hover:ring-secondary-300"
+                    >
+                      <img
+                        src={img}
+                        alt={`${product.model} ${idx + 2}`}
+                        className="h-full w-full object-cover"
+                      />
                     </div>
                   ))}
                 </div>
@@ -144,225 +176,244 @@ export default function ProductDetail() {
           )}
         </div>
 
-        {/* Product Info */}
-        <div>
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">{product.model}</h1>
-          <p className="text-lg text-gray-600 mb-4">{product.category}</p>
+        {/* Product info */}
+        <div className="space-y-8">
+          <header className="space-y-3">
+            <p className="text-caption font-semibold uppercase tracking-wider text-neutral-500">
+              {product.category}
+            </p>
+            <h1 className="text-h1-md text-neutral-900">{product.model}</h1>
 
-          <div className="flex items-center gap-4 mb-6">
-            <div>
-              <span className="text-3xl font-bold text-gray-900">{formatCurrency(price)}</span>
-              {originalPrice && (
-                <span className="text-lg text-gray-500 line-through ml-2">{formatCurrency(originalPrice)}</span>
+            <div className="flex flex-wrap items-end gap-4 pt-1">
+              <div>
+                <span className="text-h2-md font-bold text-neutral-900">{formatCurrency(price)}</span>
+                {originalPrice && (
+                  <span className="ml-2 text-body text-neutral-400 line-through">
+                    {formatCurrency(originalPrice)}
+                  </span>
+                )}
+              </div>
+
+              {product.averageRating && (
+                <div className="flex items-center gap-2 rounded-pill bg-secondary-100 px-3 py-1.5">
+                  <div className="flex items-center gap-0.5">
+                    {[...Array(5)].map((_, i) => (
+                      <Star
+                        key={i}
+                        className={`h-4 w-4 ${
+                          i < Math.round(product.averageRating)
+                            ? 'fill-accent-400 text-accent-400'
+                            : 'text-neutral-300'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                  <span className="text-body-sm font-medium text-neutral-700">
+                    {product.averageRating.toFixed(1)} ({product.reviewCount} reviews)
+                  </span>
+                </div>
               )}
             </div>
-            {product.averageRating && (
-              <div className="flex items-center gap-1">
-                {[...Array(5)].map((_, i) => (
-                  <Star
-                    key={i}
-                    className={`w-5 h-5 ${
-                      i < Math.round(product.averageRating)
-                        ? 'text-yellow-400 fill-current'
-                        : 'text-gray-300'
-                    }`}
-                  />
-                ))}
-                <span className="ml-2 text-gray-600">
-                  {product.averageRating.toFixed(1)} ({product.reviewCount} reviews)
-                </span>
-              </div>
-            )}
-          </div>
+          </header>
 
-          {/* AR / QR Code Section */}
+          <SectionDivider />
+
           {product.rendablePath && (
-            <div className="mb-6">
+            <DetailSection>
               {isDesktop ? (
                 <button
+                  type="button"
                   onClick={() => setShowQRCode(true)}
-                  className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
+                  className="btn btn-secondary btn-lg w-full gap-2"
                 >
-                  <QrCode className="w-5 h-5" />
+                  <QrCode className="h-5 w-5" />
                   Show QR Code for Mobile AR
                 </button>
               ) : (
                 <Link
                   to={`/ar?productId=${product.id}${selectedColor?.id ? `&textureId=${selectedColor.id}` : ''}`}
-                  className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
+                  className="btn btn-secondary btn-lg w-full gap-2"
                 >
-                  <Box className="w-5 h-5" />
+                  <Box className="h-5 w-5" />
                   View in Your Space (AR)
                 </Link>
               )}
-            </div>
+            </DetailSection>
           )}
 
-          {/* Available Colors */}
           {product.availableColors && product.availableColors.length > 0 && (
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Available Colors
-              </label>
-              <div className="flex flex-wrap gap-2">
-                {product.availableColors.map((color: any) => (
-                  <button
-                    key={color.id}
-                    onClick={() => setSelectedColor(color)}
-                    className={`px-4 py-2 rounded-lg border-2 transition-all ${
-                      selectedColor?.id === color.id
-                        ? 'border-primary-600 bg-primary-50'
-                        : 'border-gray-300 hover:border-primary-400'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2">
-                      {color.hexCode && (
-                        <div
-                          className="w-6 h-6 rounded-full border border-gray-300"
+            <DetailSection title="Available Colors">
+              <div className="flex flex-wrap gap-3">
+                {product.availableColors.map((color: any) => {
+                  const isSelected = selectedColor?.id === color.id
+                  return (
+                    <button
+                      key={color.id}
+                      type="button"
+                      onClick={() => setSelectedColor(color)}
+                      className={`flex min-w-[4.5rem] flex-col items-center gap-2 rounded-card px-3 py-2.5 transition-all duration-brand ${
+                        isSelected
+                          ? 'bg-primary-50 ring-2 ring-primary-600 ring-offset-2'
+                          : 'bg-secondary-50 hover:bg-secondary-100'
+                      }`}
+                    >
+                      {color.hexCode ? (
+                        <span
+                          className="h-9 w-9 rounded-full ring-1 ring-secondary-200"
                           style={{ backgroundColor: color.hexCode }}
+                          aria-hidden
                         />
+                      ) : (
+                        <span className="flex h-9 w-9 items-center justify-center rounded-full bg-secondary-200 text-caption text-neutral-500">
+                          ?
+                        </span>
                       )}
-                      <span>{color.colorName}</span>
-                    </div>
-                  </button>
-                ))}
+                      <span className="text-caption font-medium text-neutral-700">{color.colorName}</span>
+                    </button>
+                  )
+                })}
               </div>
+
               {selectedColor?.modelPath && (
-                <div className="mt-4 p-4 bg-primary-50 rounded-lg">
-                  <p className="text-sm text-primary-700 mb-2">
+                <div className="mt-4 rounded-card bg-primary-50 p-4">
+                  <p className="text-body-sm text-primary-800">
                     AR Model available for {selectedColor.colorName}
                   </p>
                   <a
                     href={selectedColor.modelPath}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-sm text-primary-600 hover:underline"
+                    className="nav-link mt-1 inline-flex text-primary-700"
                   >
                     View in AR →
                   </a>
                 </div>
               )}
-            </div>
+            </DetailSection>
           )}
 
-          {/* Quantity */}
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Quantity
-            </label>
-            <div className="flex items-center gap-4">
-              <button
-                onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                className="w-10 h-10 border border-gray-300 rounded-lg flex items-center justify-center hover:bg-gray-50"
-              >
-                -
-              </button>
-              <span className="text-lg font-semibold">{quantity}</span>
-              <button
-                onClick={() => setQuantity(Math.min(product.stockQuantity, quantity + 1))}
-                className="w-10 h-10 border border-gray-300 rounded-lg flex items-center justify-center hover:bg-gray-50"
-              >
-                +
-              </button>
-              <span className="text-sm text-gray-600">
+          <DetailSection title="Quantity">
+            <div className="flex flex-wrap items-center gap-4">
+              <div className="inline-flex items-center overflow-hidden rounded-btn border border-secondary-200 bg-white shadow-card-default">
+                <button
+                  type="button"
+                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                  className="btn-icon h-11 w-11 rounded-none"
+                  aria-label="Decrease quantity"
+                >
+                  −
+                </button>
+                <span className="min-w-[2.5rem] px-2 text-center text-body font-semibold text-neutral-900">
+                  {quantity}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setQuantity(Math.min(product.stockQuantity, quantity + 1))}
+                  className="btn-icon h-11 w-11 rounded-none"
+                  aria-label="Increase quantity"
+                >
+                  +
+                </button>
+              </div>
+              <span className="text-body-sm text-neutral-500">
                 {product.stockQuantity > 0 ? `${product.stockQuantity} in stock` : 'Out of stock'}
               </span>
             </div>
+          </DetailSection>
+
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <button
+              type="button"
+              onClick={handleAddToCart}
+              disabled={product.stockQuantity === 0}
+              className="btn btn-primary btn-lg flex-1 gap-2"
+            >
+              <ShoppingCart className="h-5 w-5" />
+              Add to Cart
+            </button>
+            <button
+              type="button"
+              onClick={handleToggleWishlist}
+              aria-label={isWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
+              className={`btn btn-ghost btn-lg shrink-0 gap-2 px-5 ${
+                isWishlisted ? 'text-red-600 hover:bg-red-50 hover:text-red-700' : ''
+              }`}
+            >
+              <Heart className={`h-5 w-5 ${isWishlisted ? 'fill-current' : ''}`} />
+              <span className="hidden sm:inline">{isWishlisted ? 'Saved' : 'Wishlist'}</span>
+            </button>
           </div>
 
-          {/* Actions */}
-          <div className="flex flex-col gap-4 mb-8">
-            <div className="flex gap-4">
-              <button
-                onClick={handleAddToCart}
-                disabled={product.stockQuantity === 0}
-                className="flex-1 btn btn-primary flex items-center justify-center gap-2 disabled:opacity-50"
-              >
-                <ShoppingCart className="w-5 h-5" />
-                Add to Cart
-              </button>
-              <button
-                onClick={handleToggleWishlist}
-                className={`p-4 rounded-lg border-2 ${
-                  isWishlisted
-                    ? 'border-red-500 bg-red-50 text-red-600'
-                    : 'border-gray-300 hover:border-primary-400'
-                }`}
-              >
-                <Heart className={`w-5 h-5 ${isWishlisted ? 'fill-current' : ''}`} />
-              </button>
+          <div className="flex flex-wrap gap-3">
+            <div className="badge-secondary inline-flex items-center gap-2 px-4 py-2.5">
+              <Truck className="h-4 w-4 text-primary-600" />
+              <span className="text-body-sm font-medium">Free Shipping</span>
+            </div>
+            <div className="badge-secondary inline-flex items-center gap-2 px-4 py-2.5">
+              <Package className="h-4 w-4 text-primary-600" />
+              <span className="text-body-sm font-medium">Easy Returns</span>
             </div>
           </div>
 
-          {/* Features */}
-          <div className="grid grid-cols-2 gap-4 mb-8">
-            <div className="flex items-center gap-2 text-gray-600">
-              <Truck className="w-5 h-5" />
-              <span className="text-sm">Free Shipping</span>
-            </div>
-            <div className="flex items-center gap-2 text-gray-600">
-              <Package className="w-5 h-5" />
-              <span className="text-sm">Easy Returns</span>
-            </div>
-          </div>
-
-          {/* Description */}
           {product.details?.description && (
-            <div className="mb-8">
-              <h3 className="text-lg font-semibold mb-2">Description</h3>
-              <p className="text-gray-600">{product.details.description}</p>
-            </div>
+            <>
+              <SectionDivider />
+              <DetailSection title="Description">
+                <p className="text-body text-neutral-600 leading-relaxed">{product.details.description}</p>
+              </DetailSection>
+            </>
           )}
 
-          {/* Sizes */}
           {product.sizes && product.sizes.some((s: number) => s > 0) && (
-            <div className="mb-8">
-              <h3 className="text-lg font-semibold mb-2">Dimensions</h3>
-              <p className="text-gray-600">
-                {product.sizes[0]} × {product.sizes[1]} × {product.sizes[2]} cm
-                (Width × Height × Depth)
-              </p>
-            </div>
+            <>
+              {!product.details?.description && <SectionDivider />}
+              <DetailSection title="Dimensions">
+                <p className="text-body text-neutral-600">
+                  {product.sizes[0]} × {product.sizes[1]} × {product.sizes[2]} cm
+                  <span className="text-neutral-400"> (Width × Height × Depth)</span>
+                </p>
+              </DetailSection>
+            </>
           )}
         </div>
       </div>
 
-      {/* Reviews Section */}
       {reviews && reviews.length > 0 && (
-        <div className="mt-12">
-          <h2 className="text-2xl font-bold mb-6">Reviews</h2>
+        <section className="mt-16 border-t border-secondary-200 pt-12">
+          <h2 className="text-h2-md mb-8 text-neutral-900">Reviews</h2>
           <div className="space-y-4">
             {reviews.map((review: any) => (
-              <div key={review.id} className="bg-white rounded-lg border border-gray-200 p-6">
-                <div className="flex items-start justify-between mb-2">
+              <article key={review.id} className="card">
+                <div className="mb-3 flex items-start justify-between gap-4">
                   <div>
-                    <p className="font-semibold">{review.userName}</p>
+                    <p className="text-body-sm font-semibold text-neutral-900">{review.userName}</p>
                     {review.isVerifiedPurchase && (
-                      <span className="text-xs text-primary-600">Verified Purchase</span>
+                      <span className="text-caption font-semibold text-primary-700">Verified Purchase</span>
                     )}
                   </div>
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-0.5">
                     {[...Array(5)].map((_, i) => (
                       <Star
                         key={i}
-                        className={`w-4 h-4 ${
-                          i < review.rating ? 'text-yellow-400 fill-current' : 'text-gray-300'
+                        className={`h-4 w-4 ${
+                          i < review.rating ? 'fill-accent-400 text-accent-400' : 'text-neutral-300'
                         }`}
                       />
                     ))}
                   </div>
                 </div>
-                {review.comment && <p className="text-gray-600">{review.comment}</p>}
-                <p className="text-xs text-gray-400 mt-2">
+                {review.comment && (
+                  <p className="text-body-sm text-neutral-600 leading-relaxed">{review.comment}</p>
+                )}
+                <p className="mt-3 text-caption text-neutral-400">
                   {new Date(review.createdAt).toLocaleDateString()}
                 </p>
-              </div>
+              </article>
             ))}
           </div>
-        </div>
+        </section>
       )}
 
-      {/* QR Code Modal for Desktop */}
       {showQRCode && isDesktop && product.rendablePath && (
         <ARQRCode
           productId={product.id}
@@ -374,4 +425,3 @@ export default function ProductDetail() {
     </div>
   )
 }
-

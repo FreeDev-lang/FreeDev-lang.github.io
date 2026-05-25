@@ -63,7 +63,7 @@ export async function resizeImage(
         }
 
         // Calculate new dimensions maintaining aspect ratio
-        let { width, height } = img
+        const { width, height } = img
         
         // Always resize to recommended dimensions (or keep if smaller) for consistency
         let newWidth = width

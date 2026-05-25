@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { storesApi } from '../lib/api'
 import { MapPin, ShoppingBag, Phone, Mail, Navigation } from 'lucide-react'
@@ -73,17 +73,13 @@ export default function StoreDetail() {
   const [isLoading, setIsLoading] = useState(true)
   const [currentSlide, setCurrentSlide] = useState(0)
 
-  useEffect(() => {
-    if (slug) {
-      loadStoreData()
-    }
-  }, [slug])
+  const loadStoreData = useCallback(async () => {
+    if (!slug) return
 
-  const loadStoreData = async () => {
     setIsLoading(true)
     try {
       // Load store
-      const storeResponse = await storesApi.getBySlug(slug!)
+      const storeResponse = await storesApi.getBySlug(slug)
       setStore(storeResponse.data)
 
       // Load customization
@@ -115,7 +111,13 @@ export default function StoreDetail() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [slug])
+
+  useEffect(() => {
+    if (slug) {
+      loadStoreData()
+    }
+  }, [slug, loadStoreData])
 
   // Filter carousel slides by active status and date range
   const activeSlides = customization?.carouselSlides?.filter(slide => {

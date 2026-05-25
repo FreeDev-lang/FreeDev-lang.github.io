@@ -136,7 +136,7 @@ export default function ARViewer({
       setPlacedObjects((prev) => [...prev, arObject])
       setSelectedObjectId(arObject.id)
     },
-    [glbLoader, textureLoader]
+    [glbLoader]
   )
 
   // Handle surface hit (tap to place)
@@ -249,28 +249,12 @@ export default function ARViewer({
     toast.success('Added to cart!')
   }, [placedObjects, onAddToCart])
 
-  // Show loading state while checking support
   const [supportChecked, setSupportChecked] = useState(false)
-  
+
   useEffect(() => {
-    // Give it a moment to check support
     const timer = setTimeout(() => setSupportChecked(true), 500)
     return () => clearTimeout(timer)
   }, [])
-
-  if (!supportChecked) {
-    return (
-      <div className="fixed inset-0 z-50 bg-white flex items-center justify-center">
-        <div className="text-center p-6">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Checking AR support...</p>
-        </div>
-      </div>
-    )
-  }
-
-  // Don't block if not supported - let React Three XR handle it
-  // The XRButton will show appropriate UI if not supported
 
   // Suppress XRSession errors globally (React Three XR issue)
   useEffect(() => {
@@ -323,44 +307,16 @@ export default function ARViewer({
     }
   }, [])
 
-  // Suppress XRSession errors globally (React Three XR issue)
-  useEffect(() => {
-    const handleError = (event: ErrorEvent) => {
-      const errorMsg = event.message || event.error?.message || ''
-      if (errorMsg.includes('XRSession') || errorMsg.includes('Failed to execute \'end\' on \'XRSession\'')) {
-        console.warn('XR Session cleanup (safe to ignore)')
-        event.preventDefault()
-        event.stopPropagation()
-        return true
-      }
-      return false
-    }
-    
-    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
-      const reason = event.reason
-      const message = reason?.message || reason?.toString() || event.type || ''
-      const errorString = typeof message === 'string' ? message : JSON.stringify(message)
-      
-      if (errorString.includes('XRSession') || 
-          errorString.includes('Failed to execute') ||
-          errorString.includes('InvalidStateError')) {
-        console.warn('XR Session cleanup (safe to ignore)')
-        event.preventDefault()
-        event.stopPropagation()
-        return true
-      }
-      return false
-    }
-    
-    // Use capturing phase to catch earlier
-    window.addEventListener('error', handleError, true)
-    window.addEventListener('unhandledrejection', handleUnhandledRejection, true)
-    
-    return () => {
-      window.removeEventListener('error', handleError, true)
-      window.removeEventListener('unhandledrejection', handleUnhandledRejection, true)
-    }
-  }, [])
+  if (!supportChecked) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-white">
+        <div className="p-6 text-center">
+          <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-2 border-primary-600 border-t-transparent" />
+          <p className="text-body text-neutral-600">Checking AR support...</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <ARErrorBoundary>

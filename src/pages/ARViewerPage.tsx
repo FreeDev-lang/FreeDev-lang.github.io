@@ -48,7 +48,7 @@ export default function ARViewerPage() {
           <p className="text-gray-600 mb-6">No product ID provided</p>
           <button
             onClick={handleClose}
-            className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700"
+            className="btn btn-primary"
           >
             Go Back
           </button>

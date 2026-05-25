@@ -8,27 +8,22 @@ interface ModelViewer3DProps {
 }
 
 function Model({ url }: { url: string }) {
-  try {
-    const { scene } = useGLTF(url)
-    return <primitive object={scene} scale={1} />
-  } catch (error) {
-    console.error('Error loading model:', error)
-    return null
-  }
+  const { scene } = useGLTF(url)
+  return <primitive object={scene} scale={1} />
 }
 
 export default function ModelViewer3D({ modelUrl, className = '' }: ModelViewer3DProps) {
 
   if (!modelUrl) {
     return (
-      <div className={`flex items-center justify-center bg-gray-100 rounded-lg ${className}`}>
-        <p className="text-gray-500">No 3D model available</p>
+      <div className={`flex items-center justify-center rounded-card bg-secondary-100 ${className}`}>
+        <p className="text-body-sm text-neutral-500">No 3D model available</p>
       </div>
     )
   }
 
   return (
-    <div className={`relative bg-gray-100 rounded-lg overflow-hidden ${className}`} style={{ minHeight: '400px', height: '100%' }}>
+    <div className={`relative overflow-hidden rounded-card bg-secondary-100 ${className}`} style={{ minHeight: '400px', height: '100%' }}>
       <Suspense fallback={
         <div className="w-full h-full flex items-center justify-center" style={{ minHeight: '400px' }}>
           <Loader />

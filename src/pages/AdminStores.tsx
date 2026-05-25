@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { adminApi } from '../lib/api'
 import { Store, CheckCircle, XCircle, Clock, Plus, Eye, Edit, Trash2, BarChart3, X } from 'lucide-react'
 import toast from 'react-hot-toast'
@@ -68,11 +68,7 @@ export default function AdminStores() {
   const [users, setUsers] = useState<User[]>([])
   const [loadingUsers, setLoadingUsers] = useState(false)
 
-  useEffect(() => {
-    loadStores()
-  }, [filterStatus])
-
-  const loadStores = async () => {
+  const loadStores = useCallback(async () => {
     setIsLoading(true)
     try {
       const params: any = {}
@@ -91,7 +87,11 @@ export default function AdminStores() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [filterStatus])
+
+  useEffect(() => {
+    loadStores()
+  }, [loadStores])
 
   const loadUsers = async () => {
     setLoadingUsers(true)

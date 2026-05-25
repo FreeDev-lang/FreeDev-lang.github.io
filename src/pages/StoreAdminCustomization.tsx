@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useOutletContext } from 'react-router-dom'
 import { storeAdminApi, productsApi } from '../lib/api'
 import { Plus, Trash2, Edit, X, Image } from 'lucide-react'
@@ -65,14 +65,7 @@ export default function StoreAdminCustomization() {
   const [showFlashSaleModal, setShowFlashSaleModal] = useState(false)
   const [showDealModal, setShowDealModal] = useState(false)
 
-  useEffect(() => {
-    if (storeId) {
-      loadCustomization()
-      loadProducts()
-    }
-  }, [storeId])
-
-  const loadCustomization = async () => {
+  const loadCustomization = useCallback(async () => {
     if (!storeId) return
 
     setIsLoading(true)
@@ -99,9 +92,9 @@ export default function StoreAdminCustomization() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [storeId])
 
-  const loadProducts = async () => {
+  const loadProducts = useCallback(async () => {
     if (!storeId) return
 
     try {
@@ -111,7 +104,14 @@ export default function StoreAdminCustomization() {
     } catch (error) {
       console.error('Failed to load products', error)
     }
-  }
+  }, [storeId])
+
+  useEffect(() => {
+    if (storeId) {
+      loadCustomization()
+      loadProducts()
+    }
+  }, [storeId, loadCustomization, loadProducts])
 
   const handleSave = async () => {
     if (!storeId) return

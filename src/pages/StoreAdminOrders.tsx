@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useOutletContext } from 'react-router-dom'
 import { storeAdminApi } from '../lib/api'
 import { FileText, Search, Eye } from 'lucide-react'
@@ -33,13 +33,7 @@ export default function StoreAdminOrders() {
   const [statusFilter, setStatusFilter] = useState<string>('')
   const [paymentFilter, setPaymentFilter] = useState<string>('')
 
-  useEffect(() => {
-    if (storeId) {
-      loadOrders()
-    }
-  }, [storeId])
-
-  const loadOrders = async () => {
+  const loadOrders = useCallback(async () => {
     if (!storeId) return
 
     setIsLoading(true)
@@ -52,7 +46,13 @@ export default function StoreAdminOrders() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [storeId])
+
+  useEffect(() => {
+    if (storeId) {
+      loadOrders()
+    }
+  }, [storeId, loadOrders])
 
   const getStatusBadge = (status: string) => {
     const colors: Record<string, string> = {

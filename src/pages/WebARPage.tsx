@@ -207,7 +207,7 @@ export default function WebARPage() {
             {/* Custom AR Button Slot */}
             <button
               slot="ar-button"
-              className="absolute top-4 right-4 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 active:bg-green-800 transition-colors font-semibold text-sm shadow-lg flex items-center gap-2 z-30"
+              className="btn btn-primary btn-sm absolute top-4 right-4 z-30 gap-2 shadow-card-default"
             >
               <Box className="w-4 h-4" />
               View in your space
