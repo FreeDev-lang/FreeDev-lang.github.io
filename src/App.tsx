@@ -17,6 +17,7 @@ import Orders from './pages/Orders'
 import Wishlist from './pages/Wishlist'
 import Stores from './pages/Stores'
 import StoreDetail from './pages/StoreDetail'
+import DownloadApp from './pages/DownloadApp'
 import AdminRoute from './components/AdminRoute'
 import ProtectedRoute from './components/ProtectedRoute'
 import StoreAdminRoute from './components/StoreAdminRoute'
@@ -104,6 +105,7 @@ function App() {
           <Route path="products/:id" element={<ProductDetail />} />
           <Route path="stores" element={<Stores />} />
           <Route path="stores/:slug" element={<StoreDetail />} />
+          <Route path="download" element={<DownloadApp />} />
           <Route path="cart" element={<Cart />} />
           <Route path="checkout" element={<ProtectedRoute><Checkout /></ProtectedRoute>} />
           <Route path="login" element={<Login />} />

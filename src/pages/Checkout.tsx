@@ -74,7 +74,7 @@ export default function Checkout() {
   })
 
   const { register, handleSubmit, watch } = useForm({
-    defaultValues: { paymentMethod: 'CreditCard', notes: '' },
+    defaultValues: { paymentMethod: 'CashOnDelivery', notes: '' },
   })
 
   const selectedPayment = watch('paymentMethod')
@@ -96,7 +96,7 @@ export default function Checkout() {
     orderMutation.mutate({
       shippingAddressId: selectedAddress,
       billingAddressId: selectedAddress,
-      paymentMethod: data.paymentMethod || 'CreditCard',
+      paymentMethod: data.paymentMethod || 'CashOnDelivery',
       notes: data.notes,
     })
   }
@@ -182,14 +182,17 @@ export default function Checkout() {
 
           <CheckoutSection
             title="Payment Method"
-            description="Select how you'd like to pay"
+            description="Choose how you'd like to pay on delivery"
             icon={CreditCard}
           >
+            <p className="mb-3 rounded-card bg-secondary-50 px-4 py-3 text-body-sm text-neutral-600">
+              Payment is collected on delivery. Your order is placed as Pending until the store
+              confirms it.
+            </p>
             <div className="space-y-3">
               {[
-                { value: 'CreditCard', label: 'Credit Card' },
-                { value: 'PayPal', label: 'PayPal' },
-                { value: 'BankTransfer', label: 'Bank Transfer' },
+                { value: 'CashOnDelivery', label: 'Cash on delivery' },
+                { value: 'CardOnDelivery', label: 'Card on delivery' },
               ].map((method) => (
                 <label key={method.value} className="block cursor-pointer">
                   <SelectableCard selected={selectedPayment === method.value}>
