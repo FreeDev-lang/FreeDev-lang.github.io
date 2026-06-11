@@ -4,9 +4,12 @@ import { Shield, Power, RefreshCw, AlertTriangle, DollarSign } from 'lucide-reac
 import toast from 'react-hot-toast'
 import { SuperAdminRoute } from '../components/AdminRoute'
 import { useState } from 'react'
+import { useAuthStore } from '../store/authStore'
 
 function AdminPlatformContent() {
   const queryClient = useQueryClient()
+  const { user: me } = useAuthStore()
+  const isMaker = !!me?.isMaker
   const { data: status } = useQuery({
     queryKey: ['platform-status'],
     queryFn: () => platformApi.getStatus().then(res => res.data),
@@ -124,56 +127,68 @@ function AdminPlatformContent() {
         )}
       </div>
 
-      {/* Warning */}
-      <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-6 mb-6">
-        <div className="flex items-start gap-3">
-          <AlertTriangle className="w-6 h-6 text-yellow-600 flex-shrink-0 mt-0.5" />
-          <div>
-            <h3 className="font-bold text-yellow-900 mb-2">Warning</h3>
-            <p className="text-sm text-yellow-800">
-              Platform shutdown will stop the application from accepting new requests. 
-              This action should only be performed during maintenance or emergencies.
+      {/* Shutdown/restart — platform owner (Maker) only */}
+      {isMaker ? (
+        <>
+          <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-6 mb-6">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="w-6 h-6 text-yellow-600 flex-shrink-0 mt-0.5" />
+              <div>
+                <h3 className="font-bold text-yellow-900 mb-2">Owner-only controls</h3>
+                <p className="text-sm text-yellow-800">
+                  Platform shutdown will stop the application from accepting new requests.
+                  Only you, the platform owner, can perform this. Use it only during maintenance or emergencies.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <Power className="w-8 h-8 text-red-600" />
+                <h3 className="text-lg font-bold text-gray-900">Shutdown Platform</h3>
+              </div>
+              <p className="text-gray-600 mb-4">
+                Stop the platform from accepting new requests. This is a critical operation.
+              </p>
+              <button
+                onClick={handleShutdown}
+                disabled={shutdownMutation.isPending || status?.isShutdown}
+                className="w-full bg-red-600 text-white px-4 py-3 rounded-lg hover:bg-red-700 disabled:bg-gray-300 disabled:cursor-not-allowed font-medium"
+              >
+                {shutdownMutation.isPending ? 'Shutting down...' : 'Shutdown Platform'}
+              </button>
+            </div>
+
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <RefreshCw className="w-8 h-8 text-blue-600" />
+                <h3 className="text-lg font-bold text-gray-900">Restart Platform</h3>
+              </div>
+              <p className="text-gray-600 mb-4">
+                Restart the platform to resume normal operations after a shutdown.
+              </p>
+              <button
+                onClick={handleRestart}
+                disabled={restartMutation.isPending || !status?.isShutdown}
+                className="w-full bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed font-medium"
+              >
+                {restartMutation.isPending ? 'Restarting...' : 'Restart Platform'}
+              </button>
+            </div>
+          </div>
+        </>
+      ) : (
+        <div className="bg-gray-50 border border-gray-200 rounded-xl p-6">
+          <div className="flex items-start gap-3">
+            <Shield className="w-6 h-6 text-gray-400 flex-shrink-0 mt-0.5" />
+            <p className="text-sm text-gray-600">
+              Shutting down or restarting the platform is reserved for the platform owner.
             </p>
           </div>
         </div>
-      </div>
-
-      {/* Actions */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <Power className="w-8 h-8 text-red-600" />
-            <h3 className="text-lg font-bold text-gray-900">Shutdown Platform</h3>
-          </div>
-          <p className="text-gray-600 mb-4">
-            Stop the platform from accepting new requests. This is a critical operation.
-          </p>
-          <button
-            onClick={handleShutdown}
-            disabled={shutdownMutation.isPending || status?.isShutdown}
-            className="w-full bg-red-600 text-white px-4 py-3 rounded-lg hover:bg-red-700 disabled:bg-gray-300 disabled:cursor-not-allowed font-medium"
-          >
-            {shutdownMutation.isPending ? 'Shutting down...' : 'Shutdown Platform'}
-          </button>
-        </div>
-
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <RefreshCw className="w-8 h-8 text-blue-600" />
-            <h3 className="text-lg font-bold text-gray-900">Restart Platform</h3>
-          </div>
-          <p className="text-gray-600 mb-4">
-            Restart the platform to resume normal operations after a shutdown.
-          </p>
-          <button
-            onClick={handleRestart}
-            disabled={restartMutation.isPending || !status?.isShutdown}
-            className="w-full bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed font-medium"
-          >
-            {restartMutation.isPending ? 'Restarting...' : 'Restart Platform'}
-          </button>
-        </div>
-      </div>
+      )}
     </div>
   )
 }

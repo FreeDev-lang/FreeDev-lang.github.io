@@ -2,23 +2,27 @@ import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { useNavigate, useParams } from 'react-router-dom'
 import { productsApi, categoriesApi, productColorsApi } from '../lib/api'
-import { ArrowLeft, Upload, X, Plus, Trash2 } from 'lucide-react'
+import { ArrowLeft, Upload, X, Plus, Trash2, Star } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+
+type ExistingImage = { id: number; url: string; displayOrder: number }
 
 export default function AdminAddProduct() {
   const navigate = useNavigate()
   const { id } = useParams()
   const isEditing = !!id
-  const { register, handleSubmit, formState: { errors }, reset } = useForm()
+  const { register, handleSubmit, watch, formState: { errors }, reset } = useForm()
   const [modelFile, setModelFile] = useState<File | null>(null)
   const [imageFiles, setImageFiles] = useState<File[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [activeTab, setActiveTab] = useState<'basic' | 'details' | 'ecommerce' | 'ar' | 'files' | 'colors'>('basic')
-  const [existingImages, setExistingImages] = useState<string[]>([])
-  const [originalData, setOriginalData] = useState<any>(null)
+  const [activeTab, setActiveTab] = useState<'basic' | 'details' | 'ecommerce' | 'ar' | 'files' | 'attributes' | 'colors'>('basic')
+  const [existingImages, setExistingImages] = useState<ExistingImage[]>([])
+  // Per-product attribute values, keyed by categoryAttributeId.
+  const [attrValues, setAttrValues] = useState<Record<number, string>>({})
   const queryClient = useQueryClient()
+  const selectedCategory = watch('category')
 
   const { data: categories } = useQuery({
     queryKey: ['product-categories'],
@@ -34,6 +38,13 @@ export default function AdminAddProduct() {
   const { data: productColors = [] } = useQuery({
     queryKey: ['product-colors', id],
     queryFn: () => productColorsApi.getByProduct(Number(id)).then(res => res.data),
+    enabled: isEditing && !!id,
+  })
+
+  // Effective category attributes for this product (own + inherited), with current values.
+  const { data: productAttributes = [] } = useQuery({
+    queryKey: ['product-attributes', id],
+    queryFn: () => productsApi.getAttributes(Number(id)).then(res => res.data),
     enabled: isEditing && !!id,
   })
 
@@ -53,7 +64,7 @@ export default function AdminAddProduct() {
         goodToKnow: product.details?.goodToKnow || '',
         guarantee: product.details?.guarantee || '',
         productDetail: product.details?.productDetail || '',
-        stockQuantity: product.stockQuantity || 0,
+        stockQuantity: product.stockQuantity ?? 0,
         isActive: product.isActive,
         isFeatured: product.isFeatured,
         discountPrice: product.discountPrice || '',
@@ -62,10 +73,23 @@ export default function AdminAddProduct() {
         modelUnits: product.modelUnits || 'cm',
       }
       reset(formData)
-      setOriginalData(formData)
-      setExistingImages(product.images || [])
+      // imageDetails carries ids (needed for delete); fall back to plain urls for older payloads.
+      setExistingImages(
+        product.imageDetails?.length
+          ? product.imageDetails
+          : (product.images || []).map((url: string, i: number) => ({ id: -1 - i, url, displayOrder: i }))
+      )
     }
   }, [product, isEditing, reset])
+
+  // Seed attribute value inputs once the effective attributes load.
+  useEffect(() => {
+    if (productAttributes.length > 0) {
+      const seeded: Record<number, string> = {}
+      for (const a of productAttributes) seeded[a.categoryAttributeId] = a.value ?? ''
+      setAttrValues(seeded)
+    }
+  }, [productAttributes])
 
   const onSubmit = async (data: any) => {
     if (!isEditing && !modelFile) {
@@ -75,131 +99,87 @@ export default function AdminAddProduct() {
 
     setIsSubmitting(true)
     try {
+      // Full-state submit: send EVERY field every time. The previous "diff only changed fields"
+      // logic compared form strings against typed values and silently dropped real edits
+      // (numbers/booleans never matched), so toggles and cleared fields didn't save. The backend
+      // applies all provided fields, so sending the whole form is both correct and simpler.
       const formData = new FormData()
-      
-      if (isEditing && originalData) {
-        // Only send changed fields when editing
-        if (data.category !== originalData.category) formData.append('Category', data.category)
-        if (data.model !== originalData.model) formData.append('Model', data.model)
-        if (data.price !== originalData.price) formData.append('Price', data.price?.toString() || '0')
-        if (data.color !== originalData.color) {
-          if (data.color) formData.append('Color', data.color)
-          else formData.append('Color', '')
-        }
-        if (data.source !== originalData.source) {
-          if (data.source) formData.append('Source', data.source)
-          else formData.append('Source', '')
-        }
-        
-        // Sizes - check if any changed
-        const currentSizes = [data.width || '', data.height || '', data.depth || '']
-        const originalSizes = [originalData.width || '', originalData.height || '', originalData.depth || '']
-        if (JSON.stringify(currentSizes) !== JSON.stringify(originalSizes)) {
-          const sizes = []
-          if (data.width) sizes.push(data.width)
-          if (data.height) sizes.push(data.height)
-          if (data.depth) sizes.push(data.depth)
-          if (sizes.length > 0) {
-            formData.append('Sizes', sizes.join(','))
-          }
-        }
-        
-        // Details
-        if (data.description !== originalData.description) {
-          if (data.description) formData.append('Description', data.description)
-          else formData.append('Description', '')
-        }
-        if (data.goodToKnow !== originalData.goodToKnow) {
-          if (data.goodToKnow) formData.append('GoodToKnow', data.goodToKnow)
-          else formData.append('GoodToKnow', '')
-        }
-        if (data.guarantee !== originalData.guarantee) {
-          if (data.guarantee) formData.append('Guarantee', data.guarantee)
-          else formData.append('Guarantee', '')
-        }
-        if (data.productDetail !== originalData.productDetail) {
-          if (data.productDetail) formData.append('ProductDetail', data.productDetail)
-          else formData.append('ProductDetail', '')
-        }
-        
-        // E-commerce fields
-        if (data.stockQuantity !== originalData.stockQuantity) {
-          formData.append('StockQuantity', (data.stockQuantity !== undefined && data.stockQuantity !== null && data.stockQuantity !== '') ? data.stockQuantity.toString() : '0')
-        }
-        if (data.isActive !== originalData.isActive) {
-          formData.append('IsActive', data.isActive ? 'true' : 'false')
-        }
-        if (data.isFeatured !== originalData.isFeatured) {
-          formData.append('IsFeatured', data.isFeatured ? 'true' : 'false')
-        }
-        if (data.discountPrice !== originalData.discountPrice) {
-          if (data.discountPrice) formData.append('DiscountPrice', data.discountPrice)
-          else formData.append('DiscountPrice', '')
-        }
-        if (data.sku !== originalData.sku) {
-          if (data.sku) formData.append('SKU', data.sku)
-          else formData.append('SKU', '')
-        }
-        
-        // AR fields
-        if (data.modelScale !== originalData.modelScale) {
-          if (data.modelScale) formData.append('ModelScale', data.modelScale)
-          else formData.append('ModelScale', '')
-        }
-        if (data.modelUnits !== originalData.modelUnits) {
-          formData.append('ModelUnits', data.modelUnits || 'cm')
-        }
-      } else {
-        // Create mode - send all fields
-        formData.append('Category', data.category)
-        formData.append('Model', data.model)
-        formData.append('Price', data.price?.toString() || '0')
-        if (data.color) formData.append('Color', data.color)
-        if (data.source) formData.append('Source', data.source)
-        
-        const sizes = []
-        if (data.width) sizes.push(data.width)
-        if (data.height) sizes.push(data.height)
-        if (data.depth) sizes.push(data.depth)
-        if (sizes.length > 0) {
-          formData.append('Sizes', sizes.join(','))
-        }
-        
-        if (data.description) formData.append('Description', data.description)
-        if (data.goodToKnow) formData.append('GoodToKnow', data.goodToKnow)
-        if (data.guarantee) formData.append('Guarantee', data.guarantee)
-        if (data.productDetail) formData.append('ProductDetail', data.productDetail)
-        
-        formData.append('StockQuantity', (data.stockQuantity !== undefined && data.stockQuantity !== null && data.stockQuantity !== '') ? data.stockQuantity.toString() : '0')
-        formData.append('IsActive', data.isActive ? 'true' : 'false')
-        formData.append('IsFeatured', data.isFeatured ? 'true' : 'false')
-        if (data.discountPrice) formData.append('DiscountPrice', data.discountPrice)
-        if (data.sku) formData.append('SKU', data.sku)
-        
-        if (data.modelScale) formData.append('ModelScale', data.modelScale)
-        formData.append('ModelUnits', data.modelUnits || 'cm')
-      }
-      
-      // Files - only append new files (model file is optional when editing)
-      if (modelFile) {
-        formData.append('modelFile', modelFile)
-      }
-      imageFiles.forEach((file) => {
-        formData.append('imageFiles', file)
-      })
-      
+      formData.append('Category', data.category ?? '')
+      formData.append('Model', data.model ?? '')
+      formData.append('Price', data.price !== '' && data.price != null ? data.price.toString() : '0')
+      formData.append('Color', data.color ?? '')
+      formData.append('Source', data.source ?? '')
+
+      const sizes: number[] = []
+      // Always send three slots so a cleared dimension persists as 0 rather than sticking.
+      sizes.push(Number(data.width) || 0, Number(data.height) || 0, Number(data.depth) || 0)
+      formData.append('Sizes', sizes.join(','))
+
+      formData.append('Description', data.description ?? '')
+      formData.append('GoodToKnow', data.goodToKnow ?? '')
+      formData.append('Guarantee', data.guarantee ?? '')
+      formData.append('ProductDetail', data.productDetail ?? '')
+
+      formData.append('StockQuantity', data.stockQuantity !== '' && data.stockQuantity != null ? data.stockQuantity.toString() : '0')
+      formData.append('IsActive', data.isActive ? 'true' : 'false')
+      formData.append('IsFeatured', data.isFeatured ? 'true' : 'false')
+      formData.append('DiscountPrice', data.discountPrice ? data.discountPrice.toString() : '')
+      formData.append('SKU', data.sku ?? '')
+
+      formData.append('ModelScale', data.modelScale ? data.modelScale.toString() : '')
+      formData.append('ModelUnits', data.modelUnits || 'cm')
+
+      // Files — only append new uploads (model file is optional when editing).
+      if (modelFile) formData.append('modelFile', modelFile)
+      imageFiles.forEach((file) => formData.append('imageFiles', file))
+
+      let productId = Number(id)
       if (isEditing && id) {
-        await productsApi.update(Number(id), formData)
-        toast.success('Product updated successfully!')
+        await productsApi.update(productId, formData)
       } else {
-        await productsApi.create(formData)
-        toast.success('Product created successfully!')
+        const res = await productsApi.create(formData)
+        productId = res.data.id
       }
+
+      // Save attribute values (only meaningful once the product exists).
+      if (productId && Object.keys(attrValues).length > 0) {
+        const payload = Object.entries(attrValues).map(([attrId, value]) => ({
+          categoryAttributeId: Number(attrId),
+          value: value === '' ? null : value,
+        }))
+        await productsApi.setAttributes(productId, payload)
+      }
+
+      toast.success(isEditing ? 'Product updated successfully!' : 'Product created successfully!')
+      queryClient.invalidateQueries({ queryKey: ['product', id] })
       navigate('/admin/products')
     } catch (error: any) {
       toast.error(error.response?.data?.message || `Failed to ${isEditing ? 'update' : 'create'} product`)
     } finally {
       setIsSubmitting(false)
+    }
+  }
+
+  const handleDeleteExistingImage = async (imageId: number) => {
+    if (imageId < 0 || !id) return // legacy URL-only entry without a real id
+    if (!window.confirm('Remove this image?')) return
+    try {
+      await productsApi.deleteImage(Number(id), imageId)
+      setExistingImages((prev) => prev.filter((img) => img.id !== imageId))
+      toast.success('Image removed')
+    } catch (e: any) {
+      toast.error(e.response?.data?.message || 'Failed to remove image')
+    }
+  }
+
+  const handleSetPrimaryImage = async (imageId: number) => {
+    if (imageId < 0 || !id) return
+    try {
+      await productsApi.setPrimaryImage(Number(id), imageId)
+      queryClient.invalidateQueries({ queryKey: ['product', id] })
+      toast.success('Primary image updated')
+    } catch (e: any) {
+      toast.error(e.response?.data?.message || 'Failed to set primary image')
     }
   }
 
@@ -222,6 +202,7 @@ export default function AdminAddProduct() {
   const tabs = [
     { id: 'basic', label: 'Basic Info' },
     { id: 'details', label: 'Product Details' },
+    { id: 'attributes', label: 'Attributes' },
     { id: 'ecommerce', label: 'E-commerce' },
     { id: 'ar', label: 'AR Settings' },
     { id: 'files', label: 'Files' },
@@ -507,6 +488,75 @@ export default function AdminAddProduct() {
               </div>
             )}
 
+            {/* Attributes Tab — category-defined properties (bed size, seats, …) */}
+            {activeTab === 'attributes' && (
+              <div className="space-y-6">
+                {!isEditing ? (
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                    <p className="text-sm text-yellow-800">
+                      <strong>Note:</strong> Save the product first, then its category's attributes will appear here to fill in.
+                    </p>
+                  </div>
+                ) : productAttributes.length === 0 ? (
+                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                    <p className="text-sm text-gray-600">
+                      The category <strong>{selectedCategory}</strong> has no attributes yet. Define them in
+                      {' '}<Link to="/admin/categories" className="text-primary-600 underline">Categories → Attributes</Link>,
+                      then reopen this product. (If you just changed the category, save first.)
+                    </p>
+                  </div>
+                ) : (
+                  <>
+                    <p className="text-sm text-gray-600">
+                      These properties come from the product's category and its parents. Fill in what applies.
+                    </p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {productAttributes.map((attr: any) => (
+                        <div key={attr.categoryAttributeId}>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            {attr.name}
+                            {attr.unit && <span className="text-gray-400"> ({attr.unit})</span>}
+                            {attr.isRequired && <span className="text-red-500"> *</span>}
+                          </label>
+                          {attr.dataType === 'select' ? (
+                            <select
+                              value={attrValues[attr.categoryAttributeId] ?? ''}
+                              onChange={(e) => setAttrValues((v) => ({ ...v, [attr.categoryAttributeId]: e.target.value }))}
+                              className="input"
+                            >
+                              <option value="">— Select —</option>
+                              {attr.options?.map((opt: string) => (
+                                <option key={opt} value={opt}>{opt}</option>
+                              ))}
+                            </select>
+                          ) : attr.dataType === 'boolean' ? (
+                            <select
+                              value={attrValues[attr.categoryAttributeId] ?? ''}
+                              onChange={(e) => setAttrValues((v) => ({ ...v, [attr.categoryAttributeId]: e.target.value }))}
+                              className="input"
+                            >
+                              <option value="">—</option>
+                              <option value="true">Yes</option>
+                              <option value="false">No</option>
+                            </select>
+                          ) : (
+                            <input
+                              type={attr.dataType === 'number' ? 'number' : 'text'}
+                              value={attrValues[attr.categoryAttributeId] ?? ''}
+                              onChange={(e) => setAttrValues((v) => ({ ...v, [attr.categoryAttributeId]: e.target.value }))}
+                              className="input"
+                              placeholder={attr.name}
+                            />
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                    <p className="text-xs text-gray-500">Values are saved when you click “Update Product”.</p>
+                  </>
+                )}
+              </div>
+            )}
+
             {/* E-commerce Tab */}
             {activeTab === 'ecommerce' && (
               <div className="space-y-6">
@@ -638,18 +688,43 @@ export default function AdminAddProduct() {
                       <p className="text-xs text-gray-500">PNG, JPG, GIF up to 10MB</p>
                     </div>
                   </div>
-                  {/* Existing images when editing */}
+                  {/* Existing images when editing — deletable, with set-primary */}
                   {isEditing && existingImages.length > 0 && (
                     <div className="mt-4">
-                      <p className="text-sm text-gray-600 mb-2">Current images:</p>
+                      <p className="text-sm text-gray-600 mb-2">Current images <span className="text-gray-400">(first is the primary)</span>:</p>
                       <div className="grid grid-cols-4 gap-4">
-                        {existingImages.map((imageUrl, index) => (
-                          <div key={index} className="relative">
+                        {existingImages.map((image, index) => (
+                          <div key={image.id} className="group relative">
                             <img
-                              src={imageUrl}
+                              src={image.url}
                               alt={`Existing ${index + 1}`}
-                              className="w-full h-24 object-cover rounded-lg"
+                              className={`w-full h-24 object-cover rounded-lg border-2 ${index === 0 ? 'border-primary-500' : 'border-transparent'}`}
                             />
+                            {index === 0 && (
+                              <span className="absolute bottom-1 left-1 bg-primary-600 text-white text-[10px] px-1.5 py-0.5 rounded">Primary</span>
+                            )}
+                            {image.id >= 0 && (
+                              <div className="absolute top-1 right-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                {index !== 0 && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleSetPrimaryImage(image.id)}
+                                    className="bg-white/90 text-primary-600 rounded-full p-1 hover:bg-white"
+                                    title="Make primary"
+                                  >
+                                    <Star className="w-3 h-3" />
+                                  </button>
+                                )}
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteExistingImage(image.id)}
+                                  className="bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                                  title="Remove image"
+                                >
+                                  <X className="w-3 h-3" />
+                                </button>
+                              </div>
+                            )}
                           </div>
                         ))}
                       </div>
