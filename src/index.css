@@ -11,27 +11,64 @@
     @apply bg-secondary-50 text-neutral-900 antialiased font-sans text-body;
   }
 
+  /* Editorial serif headlines — the Maison voice. */
   h1 {
-    @apply text-h1 md:text-h1-md text-neutral-900;
+    @apply font-display text-h1 md:text-h1-md text-neutral-900;
   }
 
   h2 {
-    @apply text-h2 md:text-h2-md text-neutral-900;
+    @apply font-display text-h2 md:text-h2-md text-neutral-900;
   }
 
   h3 {
-    @apply text-h3 md:text-h3-md text-neutral-900;
+    @apply font-display text-h3 md:text-h3-md text-neutral-900;
+  }
+
+  ::selection {
+    background: rgb(229 200 105 / 0.45);
+    color: #0a0a0f;
+  }
+
+  /* ── Arabic luxury type voice ──
+     Amiri (Naskh serif) for display, Almarai for UI text; tracking removed —
+     Arabic is a connected script and letter-spacing breaks its ligatures. */
+  [dir='rtl'] body,
+  [dir='rtl'] .font-sans {
+    font-family: 'Almarai', 'DM Sans', system-ui, sans-serif;
+  }
+  [dir='rtl'] h1,
+  [dir='rtl'] h2,
+  [dir='rtl'] h3,
+  [dir='rtl'] .font-display {
+    font-family: 'Amiri', 'Playfair Display', serif;
+  }
+  [dir='rtl'] * {
+    letter-spacing: 0 !important;
   }
 }
 
 @layer components {
   /* ── Typography utilities ── */
   .type-hero {
-    @apply text-hero md:text-hero-md lg:text-hero-lg text-neutral-900;
+    @apply font-display text-hero md:text-hero-md lg:text-hero-lg text-neutral-900;
   }
 
   .text-muted {
     @apply text-neutral-600;
+  }
+
+  /* Tracked-caps kicker above headlines — pass uppercase text. */
+  .eyebrow {
+    @apply text-eyebrow uppercase text-accent-600;
+  }
+
+  .eyebrow-on-dark {
+    @apply text-eyebrow uppercase text-accent-400;
+  }
+
+  /* A short gold rule used as an editorial flourish. */
+  .gold-rule {
+    @apply inline-block h-px w-12 bg-accent-400 align-middle;
   }
 
   /* ── Layout rhythm ── */
@@ -51,21 +88,21 @@
     @apply border-t border-secondary-200;
   }
 
-  /* ── Buttons ── */
+  /* ── Buttons — pill CTAs, ink primary, gold accent ── */
   .btn {
     @apply inline-flex items-center justify-center gap-2
-      px-4 py-2.5 rounded-btn font-medium text-body-sm
+      px-5 py-2.5 rounded-pill font-medium text-body-sm
       transition-all duration-brand ease-brand
       focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500
       disabled:opacity-50 disabled:pointer-events-none;
   }
 
   .btn-sm {
-    @apply px-3 py-1.5 text-caption rounded-btn;
+    @apply px-4 py-1.5 text-caption;
   }
 
   .btn-lg {
-    @apply px-6 py-3 text-body rounded-btn;
+    @apply px-7 py-3.5 text-body;
   }
 
   .btn-pill {
@@ -73,7 +110,8 @@
   }
 
   .btn-primary {
-    @apply bg-primary-600 text-white hover:bg-primary-700 active:bg-primary-800;
+    @apply bg-midnight text-secondary-50 shadow-ink-glow
+      hover:bg-primary-700 hover:shadow-card-hover active:bg-primary-800;
   }
 
   .btn-secondary {
@@ -81,22 +119,30 @@
   }
 
   .btn-outline {
-    @apply border-2 border-primary-600 text-primary-700 bg-transparent
-      hover:bg-primary-50 active:bg-primary-100;
+    @apply border border-neutral-900/70 text-neutral-900 bg-transparent
+      hover:bg-neutral-900 hover:text-secondary-50 active:bg-neutral-800;
   }
 
   .btn-ghost {
     @apply text-neutral-700 bg-transparent hover:bg-secondary-100 hover:text-primary-700
-      focus:ring-primary-400 active:bg-secondary-200;
+      focus:ring-primary-400 active:bg-secondary-200 rounded-pill;
   }
 
   .btn-accent {
-    @apply bg-accent-500 text-white hover:bg-accent-600 active:bg-accent-700
+    @apply bg-accent-400 text-midnight font-semibold
+      hover:bg-accent-300 hover:shadow-gold-glow active:bg-accent-500
       focus:ring-accent-400;
   }
 
+  /* White-outline CTA for midnight sections. */
+  .btn-outline-light {
+    @apply border border-secondary-50/40 text-secondary-50 bg-transparent
+      hover:bg-secondary-50 hover:text-midnight active:bg-secondary-100
+      focus:ring-accent-400 focus:ring-offset-midnight;
+  }
+
   .btn-icon {
-    @apply inline-flex items-center justify-center p-2 rounded-btn
+    @apply inline-flex items-center justify-center p-2 rounded-pill
       text-neutral-600 hover:text-primary-700 hover:bg-secondary-100
       transition-colors duration-brand ease-brand
       focus:outline-none focus:ring-2 focus:ring-primary-400 focus:ring-offset-2;
@@ -128,7 +174,7 @@
     @apply input min-h-[7rem] resize-y;
   }
 
-  /* ── Cards & surfaces ── */
+  /* ── Cards & surfaces — gallery frames ── */
   .card {
     @apply bg-white rounded-card border border-secondary-200 p-6
       shadow-card-default transition-shadow duration-brand ease-brand;
@@ -144,6 +190,12 @@
 
   .surface-overlay {
     @apply bg-white rounded-modal shadow-overlay border border-secondary-200;
+  }
+
+  /* Midnight panel for dark editorial bands. */
+  .surface-midnight {
+    @apply bg-midnight bg-midnight-radial text-secondary-50 rounded-modal
+      border border-secondary-50/10;
   }
 
   /* ── Badges ── */
@@ -164,6 +216,10 @@
     @apply badge bg-accent-100 text-accent-800;
   }
 
+  .badge-gold {
+    @apply badge bg-accent-400 text-midnight;
+  }
+
   .badge-neutral {
     @apply badge bg-neutral-100 text-neutral-700;
   }
@@ -171,10 +227,10 @@
   /* ── Navigation ── */
   .nav-link {
     @apply text-body-sm font-medium text-neutral-600
-      hover:text-primary-700 transition-colors duration-brand ease-brand;
+      hover:text-neutral-900 transition-colors duration-brand ease-brand;
   }
 
   .nav-link-active {
-    @apply nav-link text-primary-700;
+    @apply nav-link text-neutral-900 font-semibold;
   }
 }

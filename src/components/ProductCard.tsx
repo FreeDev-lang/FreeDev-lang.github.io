@@ -71,7 +71,7 @@ export default function ProductCard({ product }: ProductCardProps) {
     <motion.article
       whileHover={cardHoverWhile}
       transition={{ type: 'spring', stiffness: 380, damping: 28 }}
-      className="group flex h-full flex-col overflow-hidden rounded-card bg-white shadow-card-default transition-shadow duration-brand hover:shadow-card-hover"
+      className="group flex h-full flex-col overflow-hidden rounded-frame border border-secondary-200 bg-white shadow-card-default transition-shadow duration-brand hover:border-accent-300/70 hover:shadow-card-hover"
     >
       <Link to={`/products/${product.id}`} className="relative block aspect-square overflow-hidden bg-secondary-100">
         {product.images && product.images.length > 0 ? (
@@ -88,12 +88,12 @@ export default function ProductCard({ product }: ProductCardProps) {
 
         <div className="pointer-events-none absolute inset-x-0 top-0 flex items-start justify-between gap-2 p-3">
           {product.discountPrice && (
-            <span className="badge rounded-pill bg-red-500/95 text-white backdrop-blur-sm">
+            <span className="badge rounded-pill bg-midnight/90 text-accent-300 backdrop-blur-sm">
               {t('products.sale')}
             </span>
           )}
           {product.isFeatured && (
-            <span className="badge-primary ml-auto rounded-pill backdrop-blur-sm">
+            <span className="badge-gold ml-auto rounded-pill backdrop-blur-sm">
               {t('products.featured')}
             </span>
           )}
@@ -124,16 +124,16 @@ export default function ProductCard({ product }: ProductCardProps) {
       </div>
 
       <Link to={`/products/${product.id}`} className="flex flex-1 flex-col px-4 pb-5 pt-4">
-        <h3 className="mb-1 line-clamp-1 text-body-sm font-semibold text-neutral-900 transition-colors duration-brand group-hover:text-primary-700">
-          {product.model}
-        </h3>
-        <p className="mb-3 text-caption font-medium uppercase tracking-wider text-neutral-500">
+        <p className="mb-1.5 text-eyebrow uppercase text-accent-600">
           {product.category}
         </p>
+        <h3 className="mb-3 line-clamp-1 font-display text-lg font-semibold text-neutral-900 transition-colors duration-brand group-hover:text-primary-700">
+          {product.model}
+        </h3>
 
-        <div className="mt-auto flex items-end justify-between gap-3">
+        <div className="mt-auto flex items-end justify-between gap-3 border-t border-secondary-100 pt-3">
           <div className="min-w-0">
-            <span className="text-body font-bold text-neutral-900">{formatCurrency(price)}</span>
+            <span className="text-body font-semibold text-neutral-900">{formatCurrency(price)}</span>
             {originalPrice && (
               <span className="ml-2 text-body-sm text-neutral-400 line-through">
                 {formatCurrency(originalPrice)}

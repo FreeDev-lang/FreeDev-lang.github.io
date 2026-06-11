@@ -1,18 +1,10 @@
 import { Link } from 'react-router-dom'
-import { ArrowRight, Sparkles } from 'lucide-react'
+import { ArrowRight, Smartphone, ArrowUpRight } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
 import { marketingApi } from '../lib/api'
-import { useTypewriter } from '../hooks/useTypewriter'
-import {
-  cursorBlinkClassName,
-  fadeUp,
-  fadeUpLg,
-  scaleIn,
-  transitions,
-} from '../utils/motion'
-
-const fullText = 'Transform Your Space\nWith Fria'
+import { useTranslation } from '../utils/i18n'
+import { fadeUp, fadeUpLg, transitions } from '../utils/motion'
 
 function AdminBanners() {
   const { data: banners } = useQuery({
@@ -46,9 +38,9 @@ function AdminBanners() {
                 )}
 
                 {(banner.title || banner.description) && (
-                  <div className="absolute inset-0 flex flex-col justify-end bg-gradient-to-t from-neutral-900/55 via-neutral-900/15 to-transparent p-4 sm:p-5">
+                  <div className="absolute inset-0 flex flex-col justify-end bg-gradient-to-t from-midnight/60 via-midnight/15 to-transparent p-4 sm:p-5">
                     {banner.title && (
-                      <h3 className="text-body-sm sm:text-base font-semibold text-white line-clamp-1">
+                      <h3 className="font-sans text-body-sm sm:text-base font-semibold text-white line-clamp-1">
                         {banner.title}
                       </h3>
                     )}
@@ -58,7 +50,7 @@ function AdminBanners() {
                       </p>
                     )}
                     {banner.linkText && banner.linkUrl && (
-                      <span className="mt-2 inline-flex w-fit items-center gap-1 rounded-pill bg-white/90 px-3 py-1 text-caption font-semibold text-primary-700 transition-colors group-hover:bg-white">
+                      <span className="mt-2 inline-flex w-fit items-center gap-1 rounded-pill bg-accent-400 px-3 py-1 text-caption font-semibold text-midnight transition-colors group-hover:bg-accent-300">
                         {banner.linkText}
                         <ArrowRight className="h-3 w-3" />
                       </span>
@@ -82,135 +74,112 @@ function AdminBanners() {
   )
 }
 
-function TypewriterHeadline() {
-  const typedText = useTypewriter(fullText, 80)
-
-  const cursor = (
-    <span className={`ml-1 h-8 md:h-12 ${cursorBlinkClassName}`} aria-hidden />
-  )
-
-  if (!typedText.includes('\n')) {
-    return (
-      <>
-        <span className="text-neutral-900">{typedText}</span>
-        {cursor}
-      </>
-    )
-  }
-
-  const [firstLine, secondLine = ''] = typedText.split('\n')
-
-  if (secondLine.startsWith('With ')) {
-    const afterWith = secondLine.substring(5)
-    const friaTyped = afterWith.substring(0, Math.min(afterWith.length, 4))
-    const afterFria = afterWith.substring(4)
-
-    return (
-      <>
-        <span className="text-neutral-900">{firstLine}</span>
-        <br />
-        <span className="text-neutral-900">With </span>
-        <span className="text-primary-600">{friaTyped}</span>
-        {afterFria && <span className="text-neutral-900">{afterFria}</span>}
-        {cursor}
-      </>
-    )
-  }
-
-  return (
-    <>
-      <span className="text-neutral-900">{firstLine}</span>
-      <br />
-      <span className="text-neutral-900">{secondLine}</span>
-      {cursor}
-    </>
-  )
-}
-
+/**
+ * The Maison hero: a full-bleed midnight gallery wall. Editorial serif headline with a gold
+ * italic accent, quiet supporting copy, and two CTAs — the collection and the AR app.
+ */
 export default function HeroSection() {
+  const { t } = useTranslation()
+
   return (
     <>
-      <AdminBanners />
-
-      <section className="relative overflow-hidden">
-        {/* Layered background: gradient fallback + optional image + scrim */}
+      <section className="relative overflow-hidden bg-midnight">
+        {/* Layered backdrop: photo, ink scrim, brand glows, faint gold grid. */}
         <div
-          className="absolute inset-0 bg-gradient-to-br from-secondary-100 via-primary-50 to-secondary-200"
-          aria-hidden
-        />
-        <div
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+          className="absolute inset-0 bg-cover bg-center opacity-40"
           style={{ backgroundImage: 'url(/back.jpg)' }}
           aria-hidden
         />
+        <div className="absolute inset-0 bg-gradient-to-r from-midnight via-midnight/85 to-midnight/40" aria-hidden />
+        <div className="absolute inset-0 bg-midnight-radial" aria-hidden />
         <div
-          className="absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,rgb(58_107_85/0.08)_1px,transparent_0)] bg-[length:24px_24px]"
+          className="absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,rgb(229_200_105/0.07)_1px,transparent_0)] bg-[length:28px_28px]"
+          aria-hidden
+        />
+        {/* Hairline ring — quiet ambient geometry, like the app's Welcome screen. */}
+        <div
+          className="pointer-events-none absolute -right-40 -top-40 hidden h-[34rem] w-[34rem] rounded-full border border-accent-400/15 lg:block"
           aria-hidden
         />
         <div
-          className="absolute inset-0 bg-gradient-to-b from-white/20 via-neutral-900/10 to-neutral-900/35"
+          className="pointer-events-none absolute -right-24 -top-24 hidden h-[22rem] w-[22rem] rounded-full border border-primary-400/15 lg:block"
           aria-hidden
         />
 
-        <div className="section-inner relative py-16 md:py-24 lg:py-28">
-          <motion.div
-            variants={fadeUpLg}
-            initial="hidden"
-            animate="visible"
-            transition={{ ...transitions.slow, delay: 0.1 }}
-            className="mx-auto max-w-3xl rounded-modal border border-white/50 bg-white/75 p-8 shadow-elevated backdrop-blur-md md:p-12"
-          >
-            <motion.div
-              variants={scaleIn}
+        <div className="section-inner relative py-20 md:py-28 lg:py-36">
+          <div className="max-w-3xl">
+            <motion.p
+              variants={fadeUp}
               initial="hidden"
               animate="visible"
-              transition={{ delay: 0.2 }}
-              className="mb-5 flex items-center justify-center gap-2"
+              transition={{ ...transitions.base, delay: 0.05 }}
+              className="eyebrow-on-dark mb-6 flex items-center gap-3"
             >
-              <span className="inline-flex items-center gap-2 rounded-pill bg-primary-50 px-3 py-1 text-caption font-semibold uppercase tracking-wider text-primary-700">
-                <Sparkles className="h-4 w-4" />
-                AR-Enabled Shopping
-              </span>
-            </motion.div>
+              <span className="gold-rule w-8" aria-hidden />
+              {t('home.heroEyebrow')}
+            </motion.p>
 
-            <h1 className="mb-5 min-h-[4rem] text-center text-hero text-neutral-900 md:min-h-[5rem] md:text-hero-md lg:text-hero-lg">
-              <TypewriterHeadline />
-            </h1>
+            <motion.h1
+              variants={fadeUpLg}
+              initial="hidden"
+              animate="visible"
+              transition={{ ...transitions.slow, delay: 0.15 }}
+              className="font-display text-hero text-secondary-50 md:text-hero-md lg:text-hero-lg"
+            >
+              {t('home.heroTitle')}{' '}
+              <em className="text-accent-400">{t('home.heroTitleAccent')}</em>
+            </motion.h1>
 
             <motion.p
               variants={fadeUp}
               initial="hidden"
               animate="visible"
-              transition={{ delay: 0.35 }}
-              className="mx-auto mb-8 max-w-2xl text-center text-body text-neutral-600 md:text-lg"
+              transition={{ ...transitions.base, delay: 0.35 }}
+              className="mt-7 max-w-xl text-body text-neutral-300 md:text-lg"
             >
-              Discover modern furniture designed for your lifestyle. Visualize in AR before you buy.
+              {t('home.heroSub')}
             </motion.p>
 
             <motion.div
               variants={fadeUp}
               initial="hidden"
               animate="visible"
-              transition={{ delay: 0.45 }}
-              className="flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-4"
+              transition={{ ...transitions.base, delay: 0.5 }}
+              className="mt-10 flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4"
             >
-              <Link
-                to="/products"
-                className="btn btn-primary btn-lg btn-pill w-full sm:w-auto"
-              >
-                Shop Now
-                <ArrowRight className="h-5 w-5" />
+              <Link to="/products" className="btn btn-accent btn-lg w-full sm:w-auto">
+                {t('home.heroCtaShop')}
+                <ArrowRight className="h-5 w-5 rtl:rotate-180" />
               </Link>
-              <Link
-                to="/products?featured=true"
-                className="btn btn-outline btn-lg btn-pill w-full sm:w-auto"
-              >
-                Featured Collection
+              <Link to="/download" className="btn btn-outline-light btn-lg w-full sm:w-auto">
+                <Smartphone className="h-5 w-5" />
+                {t('nav.getApp')}
+                <ArrowUpRight className="h-4 w-4 rtl:-rotate-90" />
               </Link>
             </motion.div>
-          </motion.div>
+
+            {/* Quiet promise strip */}
+            <motion.div
+              variants={fadeUp}
+              initial="hidden"
+              animate="visible"
+              transition={{ ...transitions.base, delay: 0.65 }}
+              className="mt-14 flex flex-wrap items-center gap-x-8 gap-y-3 border-t border-secondary-50/10 pt-6"
+            >
+              {[t('home.promiseAr'), t('home.promiseCurated'), t('home.promiseDelivery')].map(
+                (promise) => (
+                  <span key={promise} className="flex items-center gap-2 text-caption uppercase tracking-[0.18em] text-neutral-400">
+                    <span className="h-1 w-1 rounded-full bg-accent-400" aria-hidden />
+                    {promise}
+                  </span>
+                ),
+              )}
+            </motion.div>
+          </div>
         </div>
       </section>
+
+      <AdminBanners />
     </>
   )
 }

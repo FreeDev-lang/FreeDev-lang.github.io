@@ -1,5 +1,5 @@
 import { Link, useNavigate, useLocation } from 'react-router-dom'
-import { ShoppingCart, User, Menu, X, Search, Globe, Store, ChevronDown } from 'lucide-react'
+import { ShoppingCart, User, Menu, X, Search, Globe, Store, ChevronDown, Smartphone } from 'lucide-react'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuthStore } from '../store/authStore'
@@ -10,12 +10,10 @@ import { storeAdminApi } from '../lib/api'
 import BrandLogo from './BrandLogo'
 import { dropdownMotion, drawerVariants, overlayMotion, popoverOrigin } from '../utils/motion'
 
-const NAV_LINKS = [
-  { to: '/', label: 'Home' },
-  { to: '/products', labelKey: 'nav.products' as const },
-  { to: '/stores', label: 'Stores' },
-  { to: '/', label: 'About' },
-  { to: '/', label: 'Contact' },
+const NAV_LINKS: Array<{ to: string; label?: string; labelKey?: string }> = [
+  { to: '/', labelKey: 'nav.home' },
+  { to: '/products', labelKey: 'nav.products' },
+  { to: '/stores', labelKey: 'nav.stores' },
 ]
 
 const LANGUAGES = [
@@ -345,8 +343,8 @@ export default function Navbar() {
       <header
         className={`sticky top-0 z-50 transition-all duration-brand border-b ${
           isScrolled
-            ? 'bg-white/85 backdrop-blur-md shadow-card-default border-secondary-200/70'
-            : 'bg-white/90 backdrop-blur-sm border-secondary-200/40'
+            ? 'bg-secondary-50/85 backdrop-blur-md shadow-card-default border-secondary-200/70'
+            : 'bg-secondary-50/90 backdrop-blur-sm border-secondary-200/40'
         }`}
       >
         <div className="px-4 sm:px-6 lg:px-8">
@@ -368,6 +366,11 @@ export default function Navbar() {
               </div>
 
               <SearchForm className="hidden xl:flex w-52 2xl:w-64 shrink-0" />
+
+              <Link to="/download" className="hidden md:inline-flex btn btn-accent btn-sm shrink-0">
+                <Smartphone size={15} />
+                {t('nav.getApp')}
+              </Link>
 
               <CartLink />
 
@@ -407,7 +410,7 @@ export default function Navbar() {
               initial="hidden"
               animate="visible"
               exit="exit"
-              className="fixed top-0 right-0 z-[70] h-full w-[min(100vw,20rem)] bg-white shadow-overlay border-l border-secondary-200 flex flex-col sm:hidden"
+              className="fixed top-0 right-0 z-[70] h-full w-[min(100vw,20rem)] bg-secondary-50 shadow-overlay border-l border-secondary-200 flex flex-col sm:hidden"
               aria-modal="true"
               role="dialog"
             >
@@ -420,6 +423,11 @@ export default function Navbar() {
 
               <div className="flex-1 overflow-y-auto px-5 py-5 space-y-6">
                 <SearchForm className="w-full" />
+
+                <Link to="/download" onClick={closeMobile} className="btn btn-accent w-full">
+                  <Smartphone size={16} />
+                  {t('nav.getApp')}
+                </Link>
 
                 <nav className="space-y-1">
                   <p className="text-caption text-neutral-500 uppercase tracking-wider px-1 mb-2">Menu</p>
