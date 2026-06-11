@@ -9,6 +9,8 @@ interface User {
   phoneNumber?: string
   isAdmin: boolean
   isSuperAdmin?: boolean
+  isMaker?: boolean // platform owner: only role that can shut down or disable/delete accounts
+  isActive?: boolean
   isGuest: boolean
 }
 

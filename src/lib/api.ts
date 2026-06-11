@@ -87,6 +87,13 @@ export const productsApi = {
     headers: { 'Content-Type': 'multipart/form-data' },
   }),
   delete: (id: number) => api.delete(`/furniture/${id}`),
+  // Image management (admin editor)
+  deleteImage: (id: number, imageId: number) => api.delete(`/furniture/${id}/images/${imageId}`),
+  setPrimaryImage: (id: number, imageId: number) => api.post(`/furniture/${id}/images/${imageId}/primary`),
+  // Per-product category attribute values
+  getAttributes: (id: number) => api.get(`/furniture/${id}/attributes`),
+  setAttributes: (id: number, values: Array<{ categoryAttributeId: number; value: string | null }>) =>
+    api.put(`/furniture/${id}/attributes`, values),
 }
 
 // Product Groups API
@@ -158,6 +165,10 @@ export const adminApi = {
   removeAdmin: (id: number) => api.post(`/admin/users/${id}/remove-admin`),
   makeSuperAdmin: (id: number) => api.post(`/admin/users/${id}/make-super-admin`),
   removeSuperAdmin: (id: number) => api.post(`/admin/users/${id}/remove-super-admin`),
+  // Account control (Maker-only)
+  disableUser: (id: number) => api.post(`/admin/users/${id}/disable`),
+  enableUser: (id: number) => api.post(`/admin/users/${id}/enable`),
+  deleteUser: (id: number) => api.delete(`/admin/users/${id}`),
   // Store Management
   getAllStores: (params?: { status?: string; city?: string; country?: string }) => 
     api.get('/admin/stores', { params }),
@@ -261,6 +272,11 @@ export const categoriesApi = {
   update: (id: number, data: any) => api.put(`/productcategories/${id}`, data),
   delete: (id: number) => api.delete(`/productcategories/${id}`),
   checkExists: (data: any) => api.post('/productcategories/check-exists', data),
+  // Category attributes (admin-defined, inherited by sub-categories)
+  getAttributes: (id: number) => api.get(`/productcategories/${id}/attributes`),
+  createAttribute: (id: number, data: any) => api.post(`/productcategories/${id}/attributes`, data),
+  updateAttribute: (attributeId: number, data: any) => api.put(`/productcategories/attributes/${attributeId}`, data),
+  deleteAttribute: (attributeId: number) => api.delete(`/productcategories/attributes/${attributeId}`),
 }
 
 // Receipts API

@@ -1,22 +1,27 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { categoriesApi } from '../lib/api'
-import { Plus, Edit, Trash2, Folder, Package } from 'lucide-react'
+import { Plus, Edit, Trash2, Folder, Package, Sliders } from 'lucide-react'
 import toast from 'react-hot-toast'
+import CategoryAttributesModal from '../components/CategoryAttributesModal'
+
+const emptyForm = {
+  name: '',
+  displayName: '',
+  description: '',
+  imagePath: '',
+  iconName: '',
+  isActive: true,
+  displayOrder: 0,
+  slug: '',
+  parentId: '' as number | '',
+}
 
 export default function AdminCategories() {
   const [showModal, setShowModal] = useState(false)
   const [editingCategory, setEditingCategory] = useState<any>(null)
-  const [form, setForm] = useState({
-    name: '',
-    displayName: '',
-    description: '',
-    imagePath: '',
-    iconName: '',
-    isActive: true,
-    displayOrder: 0,
-    slug: '',
-  })
+  const [attributesFor, setAttributesFor] = useState<any>(null)
+  const [form, setForm] = useState({ ...emptyForm })
   const queryClient = useQueryClient()
 
   const { data: categories, isLoading } = useQuery({
@@ -63,16 +68,7 @@ export default function AdminCategories() {
   })
 
   const resetForm = () => {
-    setForm({
-      name: '',
-      displayName: '',
-      description: '',
-      imagePath: '',
-      iconName: '',
-      isActive: true,
-      displayOrder: 0,
-      slug: '',
-    })
+    setForm({ ...emptyForm })
   }
 
   const handleEdit = (category: any) => {
@@ -86,6 +82,7 @@ export default function AdminCategories() {
       isActive: category.isActive,
       displayOrder: category.displayOrder,
       slug: category.slug || '',
+      parentId: category.parentId ?? '',
     })
     setShowModal(true)
   }
@@ -100,6 +97,7 @@ export default function AdminCategories() {
       ...form,
       displayName: form.displayName || form.name,
       slug: form.slug || form.name.toLowerCase().replace(/\s+/g, '-'),
+      parentId: form.parentId === '' ? null : Number(form.parentId),
     }
 
     if (editingCategory) {
@@ -164,6 +162,9 @@ export default function AdminCategories() {
                   <div>
                     <h3 className="font-bold text-lg">{category.displayName || category.name}</h3>
                     <p className="text-sm text-gray-500">{category.name}</p>
+                    {category.parentName && (
+                      <p className="text-xs text-primary-600 mt-0.5">↳ under {category.parentName}</p>
+                    )}
                   </div>
                 </div>
                 <span className={`px-2 py-1 rounded-full text-xs font-medium ${
@@ -182,6 +183,12 @@ export default function AdminCategories() {
                   <Package className="w-4 h-4" />
                   <span>{category.productCount} products</span>
                 </div>
+                {category.attributes?.length > 0 && (
+                  <div className="flex items-center gap-1 text-primary-600">
+                    <Sliders className="w-4 h-4" />
+                    <span>{category.attributes.length} attribute{category.attributes.length === 1 ? '' : 's'}</span>
+                  </div>
+                )}
                 {category.slug && (
                   <div className="text-xs text-gray-500">
                     /{category.slug}
@@ -191,20 +198,26 @@ export default function AdminCategories() {
 
               <div className="flex gap-2">
                 <button
+                  onClick={() => setAttributesFor(category)}
+                  className="flex-1 bg-primary-50 text-primary-700 px-3 py-2 rounded-lg hover:bg-primary-100 flex items-center justify-center gap-2"
+                  title="Manage the attributes products in this category inherit"
+                >
+                  <Sliders className="w-4 h-4" />
+                  Attributes
+                </button>
+                <button
                   onClick={() => handleEdit(category)}
-                  className="flex-1 bg-blue-50 text-blue-600 px-4 py-2 rounded-lg hover:bg-blue-100 flex items-center justify-center gap-2"
+                  className="bg-blue-50 text-blue-600 px-3 py-2 rounded-lg hover:bg-blue-100 flex items-center justify-center gap-2"
                 >
                   <Edit className="w-4 h-4" />
-                  Edit
                 </button>
                 <button
                   onClick={() => handleDelete(category)}
-                  className="flex-1 bg-red-50 text-red-600 px-4 py-2 rounded-lg hover:bg-red-100 flex items-center justify-center gap-2"
+                  className="bg-red-50 text-red-600 px-3 py-2 rounded-lg hover:bg-red-100 flex items-center justify-center gap-2 disabled:opacity-40"
                   disabled={category.productCount > 0}
                   title={category.productCount > 0 ? 'Cannot delete category with products' : 'Delete category'}
                 >
                   <Trash2 className="w-4 h-4" />
-                  Delete
                 </button>
               </div>
             </div>
@@ -253,6 +266,22 @@ export default function AdminCategories() {
                     placeholder="Chairs"
                   />
                 </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Parent category <span className="text-xs text-gray-500">(this category inherits the parent's attributes)</span>
+                </label>
+                <select
+                  value={form.parentId === '' ? '' : String(form.parentId)}
+                  onChange={(e) => setForm({ ...form, parentId: e.target.value === '' ? '' : Number(e.target.value) })}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                >
+                  <option value="">— Top-level (no parent) —</option>
+                  {categories?.filter((c: any) => !editingCategory || c.id !== editingCategory.id).map((c: any) => (
+                    <option key={c.id} value={c.id}>{c.displayName || c.name}</option>
+                  ))}
+                </select>
               </div>
 
               <div>
@@ -349,6 +378,16 @@ export default function AdminCategories() {
             </div>
           </div>
         </div>
+      )}
+
+      {attributesFor && (
+        <CategoryAttributesModal
+          category={attributesFor}
+          onClose={() => {
+            setAttributesFor(null)
+            queryClient.invalidateQueries({ queryKey: ['product-categories'] })
+          }}
+        />
       )}
     </div>
   )
