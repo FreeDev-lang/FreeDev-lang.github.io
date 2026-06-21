@@ -7,6 +7,8 @@ import { useCartStore } from '../store/cartStore'
 import toast from 'react-hot-toast'
 import { useEffect, type ReactNode } from 'react'
 import { useCurrency } from '../utils/currency'
+import { useTranslation } from '../utils/i18n'
+import { resolveProductName } from '../utils/localizedName'
 
 function QuantityStepper({
   quantity,
@@ -113,21 +115,36 @@ function EmptyState({
 
 export default function Cart() {
   const { isAuthenticated } = useAuthStore()
-  const { setCart } = useCartStore()
+  const localCart = useCartStore()
+  const { setCart, removeItem: removeLocalItem, updateQuantity: updateLocalQuantity } = localCart
   const { formatCurrency } = useCurrency()
+  const { language } = useTranslation()
   const queryClient = useQueryClient()
 
-  const { data: cart, isLoading } = useQuery({
+  const { data: serverCart, isLoading } = useQuery({
     queryKey: ['cart'],
     queryFn: () => cartApi.get().then((res) => res.data),
     enabled: isAuthenticated(),
   })
 
   useEffect(() => {
-    if (cart) {
-      setCart(cart)
+    if (serverCart && isAuthenticated()) {
+      setCart(serverCart)
     }
-  }, [cart, setCart])
+  }, [serverCart, setCart, isAuthenticated])
+
+  // Authenticated users use the server cart; guests use the local store.
+  const cart = isAuthenticated()
+    ? serverCart
+    : {
+        items: localCart.items,
+        subTotal: localCart.subTotal,
+        shippingCost: localCart.shippingCost,
+        taxAmount: localCart.taxAmount,
+        discountAmount: localCart.discountAmount,
+        totalAmount: localCart.totalAmount,
+        totalItems: localCart.totalItems,
+      }
 
   const updateMutation = useMutation({
     mutationFn: ({ id, quantity }: { id: number; quantity: number }) =>
@@ -145,17 +162,24 @@ export default function Cart() {
     },
   })
 
-  if (!isAuthenticated()) {
-    return (
-      <EmptyState icon={ShoppingBag} title="Please sign in to view your cart">
-        <Link to="/login" className="btn btn-primary btn-pill">
-          Sign In
-        </Link>
-      </EmptyState>
-    )
+  const handleUpdateQuantity = (id: number, quantity: number) => {
+    if (isAuthenticated()) {
+      updateMutation.mutate({ id, quantity })
+    } else {
+      updateLocalQuantity(id, quantity)
+    }
   }
 
-  if (isLoading) {
+  const handleRemove = (id: number) => {
+    if (isAuthenticated()) {
+      removeMutation.mutate(id)
+    } else {
+      removeLocalItem(id)
+      toast.success('Item removed from cart')
+    }
+  }
+
+  if (isAuthenticated() && isLoading) {
     return (
       <div className="section-inner py-16">
         <p className="text-body text-neutral-500">Loading cart...</p>
@@ -188,7 +212,7 @@ export default function Cart() {
                 <img
                   src={item.productImage}
                   alt={item.productName}
-                  className="h-24 w-24 shrink-0 rounded-btn bg-secondary-100 object-cover"
+                  className="h-24 w-24 shrink-0 rounded-btn bg-transparent object-cover"
                 />
               ) : (
                 <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-btn bg-secondary-100 text-caption text-neutral-400">
@@ -200,7 +224,10 @@ export default function Cart() {
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <h3 className="truncate text-body font-semibold text-neutral-900">
-                      {item.productName}
+                      {resolveProductName(
+                        { model: item.productName, nameFr: item.productNameFr, nameAr: item.productNameAr },
+                        language
+                      )}
                     </h3>
                     <p className="mt-0.5 text-body-sm text-neutral-500">
                       {formatCurrency(item.unitPrice)} each
@@ -208,7 +235,7 @@ export default function Cart() {
                   </div>
                   <button
                     type="button"
-                    onClick={() => removeMutation.mutate(item.id)}
+                    onClick={() => handleRemove(item.id)}
                     className="btn btn-ghost btn-sm shrink-0 text-red-600 hover:bg-red-50 hover:text-red-700"
                     aria-label="Remove item"
                   >
@@ -219,12 +246,8 @@ export default function Cart() {
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <QuantityStepper
                     quantity={item.quantity}
-                    onDecrease={() =>
-                      updateMutation.mutate({ id: item.id, quantity: item.quantity - 1 })
-                    }
-                    onIncrease={() =>
-                      updateMutation.mutate({ id: item.id, quantity: item.quantity + 1 })
-                    }
+                    onDecrease={() => handleUpdateQuantity(item.id, item.quantity - 1)}
+                    onIncrease={() => handleUpdateQuantity(item.id, item.quantity + 1)}
                   />
                   <span className="text-body font-bold text-neutral-900">
                     {formatCurrency(item.totalPrice)}

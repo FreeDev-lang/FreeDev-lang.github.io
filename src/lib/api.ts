@@ -130,6 +130,8 @@ export const ordersApi = {
   updateStatus: (id: number, data: any) => api.put(`/orders/${id}/status`, data),
   refund: (id: number, data: any) => api.post(`/orders/${id}/refund`, data),
   updateNotes: (id: number, data: any) => api.put(`/orders/${id}/notes`, data),
+  addPayment: (id: number, data: { amount: number; note?: string }) =>
+    api.post(`/orders/${id}/payments`, data),
 }
 
 // Wishlist API
@@ -339,6 +341,8 @@ export const storeAdminApi = {
   updateCustomization: (storeId: number, data: any) => 
     api.put(`/store-admin/customization?storeId=${storeId}`, data),
   getOrders: (storeId: number) => api.get(`/store-admin/orders?storeId=${storeId}`),
+  addPayment: (storeId: number, orderId: number, data: { amount: number; note?: string }) =>
+    api.post(`/store-admin/orders/${orderId}/payments?storeId=${storeId}`, data),
   getAnalytics: (storeId: number, fromDate?: string, toDate?: string) => 
     api.get(`/store-admin/analytics?storeId=${storeId}`, { params: { fromDate, toDate } }),
   getCustomization: (storeId: number) => 

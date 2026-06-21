@@ -4,29 +4,46 @@ import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { cardHoverWhile } from '../utils/motion'
 import { useAuthStore } from '../store/authStore'
+import { useWishlistStore } from '../store/wishlistStore'
+import { useCartStore } from '../store/cartStore'
 import { cartApi, wishlistApi } from '../lib/api'
 import toast from 'react-hot-toast'
 import { useQueryClient } from '@tanstack/react-query'
 import { useCurrency } from '../utils/currency'
 import { useTranslation } from '../utils/i18n'
+import { resolveProductName } from '../utils/localizedName'
 
 interface ProductCardProps {
   product: any
 }
 
 export default function ProductCard({ product }: ProductCardProps) {
-  const [isWishlisted, setIsWishlisted] = useState(false)
   const { isAuthenticated } = useAuthStore()
+  const guestWishlist = useWishlistStore()
+  const addLocalItem = useCartStore((s) => s.addItem)
   const { formatCurrency } = useCurrency()
-  const { t } = useTranslation()
+  const { t, language } = useTranslation()
   const queryClient = useQueryClient()
+  const [serverWishlisted, setServerWishlisted] = useState(false)
+  const isWishlisted = isAuthenticated() ? serverWishlisted : guestWishlist.has(product.id)
+  const productName = resolveProductName(product, language)
 
   const handleAddToCart = async (e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
 
+    // Guests get a local (localStorage) cart with no auth prompt.
     if (!isAuthenticated()) {
-      toast.error(t('common.signInToAdd'))
+      addLocalItem({
+        furnitureItemId: product.id,
+        productName: productName,
+        productImage: product.images?.[0],
+        unitPrice: product.discountPrice || product.price,
+        quantity: 1,
+        availableStock: product.stockQuantity,
+        storeName: product.storeName,
+      })
+      toast.success(t('common.addedToCart'))
       return
     }
 
@@ -43,19 +60,38 @@ export default function ProductCard({ product }: ProductCardProps) {
     e.preventDefault()
     e.stopPropagation()
 
+    // Guests use the local wishlist store with no auth prompt.
     if (!isAuthenticated()) {
-      toast.error(t('common.signInToSave'))
+      if (guestWishlist.has(product.id)) {
+        guestWishlist.remove(product.id)
+        toast.success(t('common.removedFromWishlist'))
+      } else {
+        guestWishlist.add({
+          id: product.id,
+          model: product.model,
+          nameFr: product.nameFr,
+          nameAr: product.nameAr,
+          category: product.category,
+          price: product.price,
+          discountPrice: product.discountPrice,
+          images: product.images,
+          averageRating: product.averageRating,
+          isFeatured: product.isFeatured,
+          storeName: product.storeName,
+        })
+        toast.success(t('common.addedToWishlist'))
+      }
       return
     }
 
     try {
       if (isWishlisted) {
         await wishlistApi.remove(product.id)
-        setIsWishlisted(false)
+        setServerWishlisted(false)
         toast.success(t('common.removedFromWishlist'))
       } else {
         await wishlistApi.add(product.id)
-        setIsWishlisted(true)
+        setServerWishlisted(true)
         toast.success(t('common.addedToWishlist'))
       }
       queryClient.invalidateQueries({ queryKey: ['wishlist'] })
@@ -73,11 +109,11 @@ export default function ProductCard({ product }: ProductCardProps) {
       transition={{ type: 'spring', stiffness: 380, damping: 28 }}
       className="group flex h-full flex-col overflow-hidden rounded-frame border border-secondary-200 bg-white shadow-card-default transition-shadow duration-brand hover:border-accent-300/70 hover:shadow-card-hover"
     >
-      <Link to={`/products/${product.id}`} className="relative block aspect-square overflow-hidden bg-secondary-100">
+      <Link to={`/products/${product.id}`} className="relative block aspect-square overflow-hidden bg-transparent">
         {product.images && product.images.length > 0 ? (
           <img
             src={product.images[0]}
-            alt={product.model}
+            alt={productName}
             className="h-full w-full object-cover transition-transform duration-brand ease-brand group-hover:scale-[1.04]"
           />
         ) : (
@@ -124,11 +160,16 @@ export default function ProductCard({ product }: ProductCardProps) {
       </div>
 
       <Link to={`/products/${product.id}`} className="flex flex-1 flex-col px-4 pb-5 pt-4">
+        {product.storeName && (
+          <p className="mb-1 text-eyebrow uppercase text-neutral-500">
+            {product.storeName}
+          </p>
+        )}
         <p className="mb-1.5 text-eyebrow uppercase text-accent-600">
           {product.category}
         </p>
         <h3 className="mb-3 line-clamp-1 font-display text-lg font-semibold text-neutral-900 transition-colors duration-brand group-hover:text-primary-700">
-          {product.model}
+          {productName}
         </h3>
 
         <div className="mt-auto flex items-end justify-between gap-3 border-t border-secondary-100 pt-3">

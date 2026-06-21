@@ -3,9 +3,11 @@ import { ordersApi, receiptsApi } from '../lib/api'
 import { Package, Truck, CheckCircle, Download } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useCurrency } from '../utils/currency'
+import { useTranslation } from '../utils/i18n'
 
 export default function Orders() {
   const { formatCurrency } = useCurrency()
+  const { t } = useTranslation()
   const { data: orders, isLoading } = useQuery({
     queryKey: ['orders'],
     queryFn: () => ordersApi.getAll().then(res => res.data),
@@ -73,6 +75,16 @@ export default function Orders() {
                   <p className="text-body-sm text-neutral-600">{order.orderItems.length} items</p>
                   <div className="text-right">
                     <p className="text-body font-semibold text-neutral-900">{formatCurrency(order.totalAmount)}</p>
+                    {order.remainingAmount > 0 && (
+                      <div className="mt-1 space-y-0.5 text-caption">
+                        <p className="text-green-700">
+                          {t('payments.paid')}: {formatCurrency(order.amountPaid ?? 0)}
+                        </p>
+                        <p className="font-semibold text-amber-700">
+                          {t('payments.remaining')}: {formatCurrency(order.remainingAmount)}
+                        </p>
+                      </div>
+                    )}
                     {order.trackingNumber && (
                       <p className="mt-1 text-caption text-neutral-600">Tracking: {order.trackingNumber}</p>
                     )}

@@ -1,11 +1,15 @@
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState, type ReactNode } from 'react'
-import { productsApi, cartApi, wishlistApi, reviewsApi } from '../lib/api'
-import { ShoppingCart, Heart, Star, ArrowLeft, Package, Truck, QrCode, Box } from 'lucide-react'
+import { productsApi, cartApi, wishlistApi, reviewsApi, storesApi } from '../lib/api'
+import { ShoppingCart, Heart, Star, ArrowLeft, Package, Truck, QrCode, Box, Store } from 'lucide-react'
 import { useAuthStore } from '../store/authStore'
+import { useWishlistStore } from '../store/wishlistStore'
+import { useCartStore } from '../store/cartStore'
 import toast from 'react-hot-toast'
 import { useCurrency } from '../utils/currency'
+import { useTranslation } from '../utils/i18n'
+import { resolveProductName } from '../utils/localizedName'
 import ARQRCode from '../components/ar/ARQRCode'
 import ModelViewer3D from '../components/ar/ModelViewer3D'
 import { useDeviceDetect } from '../components/ar/hooks/useDeviceDetect'
@@ -31,13 +35,17 @@ function DetailSection({
 
 export default function ProductDetail() {
   const { id } = useParams()
+  const navigate = useNavigate()
   const [selectedColor, setSelectedColor] = useState<any>(null)
   const [quantity, setQuantity] = useState(1)
-  const [isWishlisted, setIsWishlisted] = useState(false)
+  const [serverWishlisted, setServerWishlisted] = useState(false)
   const [showQRCode, setShowQRCode] = useState(false)
   const [show3DViewer, setShow3DViewer] = useState(false)
   const { isAuthenticated } = useAuthStore()
+  const guestWishlist = useWishlistStore()
+  const addLocalItem = useCartStore((s) => s.addItem)
   const { formatCurrency } = useCurrency()
+  const { t, language } = useTranslation()
   const queryClient = useQueryClient()
   const { isDesktop } = useDeviceDetect()
 
@@ -54,38 +62,86 @@ export default function ProductDetail() {
   })
 
   const handleAddToCart = async () => {
+    // Guests get a local (localStorage) cart with no auth prompt.
     if (!isAuthenticated()) {
-      toast.error('Please sign in to add items to cart')
+      addLocalItem({
+        furnitureItemId: product.id,
+        productName: resolveProductName(product, language),
+        productImage: product.images?.[0],
+        unitPrice: product.discountPrice || product.price,
+        quantity,
+        availableStock: product.stockQuantity,
+        storeName: product.storeName,
+      })
+      toast.success(t('common.addedToCart'))
       return
     }
 
     try {
       await cartApi.add({ furnitureItemId: product.id, quantity })
-      toast.success('Added to cart!')
+      toast.success(t('common.addedToCart'))
       queryClient.invalidateQueries({ queryKey: ['cart'] })
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to add to cart')
+      toast.error(error.response?.data?.message || t('common.failedToAdd'))
     }
   }
 
+  const handleViewStore = async () => {
+    if (!product?.storeName) return
+    // We only have storeId + storeName on the product. Resolve the slug via the
+    // public by-id endpoint and navigate to the store page; fall back to /stores.
+    try {
+      if (product.storeId) {
+        const res = await storesApi.getById(product.storeId)
+        const slug = res.data?.slug
+        if (slug) {
+          navigate(`/stores/${slug}`)
+          return
+        }
+      }
+    } catch {
+      /* fall through to the stores list */
+    }
+    navigate('/stores')
+  }
+
   const handleToggleWishlist = async () => {
+    // Guests use the local wishlist store with no auth prompt.
     if (!isAuthenticated()) {
-      toast.error('Please sign in to save items')
+      if (guestWishlist.has(product.id)) {
+        guestWishlist.remove(product.id)
+        toast.success(t('common.removedFromWishlist'))
+      } else {
+        guestWishlist.add({
+          id: product.id,
+          model: product.model,
+          nameFr: product.nameFr,
+          nameAr: product.nameAr,
+          category: product.category,
+          price: product.price,
+          discountPrice: product.discountPrice,
+          images: product.images,
+          averageRating: product.averageRating,
+          isFeatured: product.isFeatured,
+          storeName: product.storeName,
+        })
+        toast.success(t('common.addedToWishlist'))
+      }
       return
     }
 
     try {
       if (isWishlisted) {
         await wishlistApi.remove(product.id)
-        setIsWishlisted(false)
-        toast.success('Removed from wishlist')
+        setServerWishlisted(false)
+        toast.success(t('common.removedFromWishlist'))
       } else {
         await wishlistApi.add(product.id)
-        setIsWishlisted(true)
-        toast.success('Added to wishlist!')
+        setServerWishlisted(true)
+        toast.success(t('common.addedToWishlist'))
       }
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to update wishlist')
+      toast.error(error.response?.data?.message || t('common.failedToUpdate'))
     }
   }
 
@@ -107,6 +163,8 @@ export default function ProductDetail() {
 
   const price = product.discountPrice || product.price
   const originalPrice = product.discountPrice ? product.price : null
+  const isWishlisted = isAuthenticated() ? serverWishlisted : guestWishlist.has(product.id)
+  const productName = resolveProductName(product, language)
 
   return (
     <div className="section-inner py-8 md:py-10">
@@ -119,7 +177,7 @@ export default function ProductDetail() {
         {/* Gallery / 3D viewer */}
         <div className="space-y-4">
           {isDesktop && product.rendablePath && show3DViewer ? (
-            <div className="relative aspect-square overflow-hidden rounded-card bg-secondary-100 shadow-card-default">
+            <div className="relative aspect-square overflow-hidden rounded-card bg-transparent shadow-card-default">
               <ModelViewer3D modelUrl={product.rendablePath} className="h-full w-full" />
               <button
                 type="button"
@@ -131,11 +189,11 @@ export default function ProductDetail() {
             </div>
           ) : (
             <>
-              <div className="relative aspect-square overflow-hidden rounded-card bg-secondary-100 shadow-card-default">
+              <div className="relative aspect-square overflow-hidden rounded-card bg-transparent shadow-card-default">
                 {product.images && product.images.length > 0 ? (
                   <img
                     src={product.images[0]}
-                    alt={product.model}
+                    alt={productName}
                     className="h-full w-full object-cover"
                   />
                 ) : (
@@ -161,11 +219,11 @@ export default function ProductDetail() {
                   {product.images.slice(1, 5).map((img: string, idx: number) => (
                     <div
                       key={idx}
-                      className="aspect-square overflow-hidden rounded-btn bg-secondary-100 ring-2 ring-transparent ring-offset-2 transition-all duration-brand hover:ring-secondary-300"
+                      className="aspect-square overflow-hidden rounded-btn bg-transparent ring-2 ring-transparent ring-offset-2 transition-all duration-brand hover:ring-secondary-300"
                     >
                       <img
                         src={img}
-                        alt={`${product.model} ${idx + 2}`}
+                        alt={`${productName} ${idx + 2}`}
                         className="h-full w-full object-cover"
                       />
                     </div>
@@ -182,7 +240,18 @@ export default function ProductDetail() {
             <p className="text-caption font-semibold uppercase tracking-wider text-neutral-500">
               {product.category}
             </p>
-            <h1 className="text-h1-md text-neutral-900">{product.model}</h1>
+            <h1 className="text-h1-md text-neutral-900">{productName}</h1>
+
+            {product.storeName && (
+              <button
+                type="button"
+                onClick={handleViewStore}
+                className="inline-flex items-center gap-2 text-body-sm font-medium text-primary-700 hover:text-primary-800"
+              >
+                <Store className="h-4 w-4" />
+                {t('products.soldBy')} {product.storeName}
+              </button>
+            )}
 
             <div className="flex flex-wrap items-end gap-4 pt-1">
               <div>
