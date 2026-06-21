@@ -113,7 +113,7 @@ function App() {
           <Route path="setup-admin" element={<LazyPage><SetupAdmin /></LazyPage>} />
           <Route path="profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
           <Route path="orders" element={<ProtectedRoute><Orders /></ProtectedRoute>} />
-          <Route path="wishlist" element={<ProtectedRoute><Wishlist /></ProtectedRoute>} />
+          <Route path="wishlist" element={<Wishlist />} />
         </Route>
         <Route path="admin" element={<AdminRoute><LazyPage><AdminLayout /></LazyPage></AdminRoute>}>
           <Route path="dashboard" element={<LazyPage><AdminDashboard /></LazyPage>} />

@@ -88,6 +88,7 @@ export default {
     rating: 'Note',
     noImage: 'Aucune image',
     sale: 'Promotion',
+    soldBy: 'Vendu par',
     shareProduct: 'Partager le produit',
     scanQRCode: 'Scannez le code QR pour voir sur mobile',
     availableColors: 'Couleurs disponibles',
@@ -121,6 +122,29 @@ export default {
     paymentNote: 'Le paiement est collecté à la livraison. Votre commande est enregistrée comme En attente jusqu\'à confirmation par le magasin.',
     noAddresses: 'Aucune adresse enregistrée. Ajoutez-en une dans votre profil.',
     placingOrder: 'Traitement de la commande...',
+    storeSubtotal: 'Sous-total du magasin',
+  },
+  // Wishlist
+  wishlist: {
+    title: 'Ma liste de souhaits',
+    empty: 'Votre liste de souhaits est vide',
+    browseProducts: 'Parcourir les produits',
+  },
+  // Payments / installments
+  payments: {
+    paid: 'Payé',
+    remaining: 'Restant',
+    history: 'Historique des paiements',
+    noPayments: 'Aucun paiement enregistré',
+    addPayment: 'Ajouter un paiement / acompte',
+    amount: 'Montant',
+    note: 'Note',
+    noteOptional: 'Note (facultatif)',
+    add: 'Ajouter',
+    paymentRecorded: 'Paiement enregistré',
+    paymentFailed: 'Échec de l\'enregistrement du paiement',
+    enterValidAmount: 'Saisissez un montant valide',
+    exceedsRemaining: 'Le montant dépasse le solde restant',
   },
   // Orders
   orders: {

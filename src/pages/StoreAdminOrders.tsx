@@ -1,14 +1,26 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useOutletContext } from 'react-router-dom'
 import { storeAdminApi } from '../lib/api'
-import { FileText, Search, Eye } from 'lucide-react'
+import { FileText, Search, Eye, Plus, X } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { Link } from 'react-router-dom'
+import { useCurrency } from '../utils/currency'
+import { useTranslation } from '../utils/i18n'
+
+interface Payment {
+  id: number
+  amount: number
+  note?: string
+  recordedByUserId?: number
+  createdAt: string
+}
 
 interface Order {
   id: number
   orderNumber: string
   totalAmount: number
+  amountPaid?: number
+  remainingAmount?: number
+  payments?: Payment[]
   orderStatus: string
   paymentStatus: string
   createdAt: string
@@ -19,6 +31,7 @@ interface Order {
   }
   orderItems: Array<{
     productName: string
+    storeName?: string | null
     quantity: number
     unitPrice: number
     totalPrice: number
@@ -27,11 +40,16 @@ interface Order {
 
 export default function StoreAdminOrders() {
   const { storeId } = useOutletContext<{ storeId: number }>()
+  const { formatCurrency } = useCurrency()
+  const { t } = useTranslation()
   const [orders, setOrders] = useState<Order[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('')
   const [paymentFilter, setPaymentFilter] = useState<string>('')
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
+  const [paymentForm, setPaymentForm] = useState({ amount: '' as number | '', note: '' })
+  const [submittingPayment, setSubmittingPayment] = useState(false)
 
   const loadOrders = useCallback(async () => {
     if (!storeId) return
@@ -53,6 +71,35 @@ export default function StoreAdminOrders() {
       loadOrders()
     }
   }, [storeId, loadOrders])
+
+  const handleAddPayment = async () => {
+    if (!selectedOrder) return
+    const amount = Number(paymentForm.amount)
+    const remaining = selectedOrder.remainingAmount ?? selectedOrder.totalAmount
+    if (!amount || amount <= 0) {
+      toast.error(t('payments.enterValidAmount'))
+      return
+    }
+    if (amount > remaining) {
+      toast.error(t('payments.exceedsRemaining'))
+      return
+    }
+    setSubmittingPayment(true)
+    try {
+      const res = await storeAdminApi.addPayment(storeId, selectedOrder.id, {
+        amount,
+        note: paymentForm.note || undefined,
+      })
+      toast.success(t('payments.paymentRecorded'))
+      setPaymentForm({ amount: '', note: '' })
+      setSelectedOrder(res.data)
+      await loadOrders()
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || t('payments.paymentFailed'))
+    } finally {
+      setSubmittingPayment(false)
+    }
+  }
 
   const getStatusBadge = (status: string) => {
     const colors: Record<string, string> = {
@@ -268,18 +315,121 @@ export default function StoreAdminOrders() {
                       {new Date(order.createdAt).toLocaleDateString()}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <Link
-                        to={`/orders/${order.id}`}
+                      <button
+                        type="button"
+                        onClick={() => { setSelectedOrder(order); setPaymentForm({ amount: '', note: '' }) }}
                         className="text-primary-600 hover:text-primary-900 flex items-center gap-1"
                       >
                         <Eye className="w-4 h-4" />
-                        View
-                      </Link>
+                        {t('common.view')}
+                      </button>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+
+      {/* Order Detail / Payment Modal */}
+      {selectedOrder && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-xl font-bold">
+                {t('orders.orderNumber')}{selectedOrder.orderNumber}
+              </h3>
+              <button onClick={() => setSelectedOrder(null)} className="text-gray-400 hover:text-gray-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <h4 className="font-semibold mb-2">{t('orders.title')}</h4>
+                <div className="space-y-2">
+                  {selectedOrder.orderItems.map((item, idx) => (
+                    <div key={idx} className="border border-gray-200 rounded p-3 flex justify-between">
+                      <div>
+                        <p className="font-medium">{item.productName}</p>
+                        {item.storeName && <p className="text-xs text-gray-500">{item.storeName}</p>}
+                        <p className="text-sm text-gray-600">
+                          {item.quantity} × {formatCurrency(item.unitPrice)}
+                        </p>
+                      </div>
+                      <p className="font-semibold">{formatCurrency(item.totalPrice)}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="border-t pt-4 space-y-1">
+                <div className="flex justify-between font-bold">
+                  <span>{t('common.total')}:</span>
+                  <span>{formatCurrency(selectedOrder.totalAmount)}</span>
+                </div>
+                <div className="flex justify-between text-green-700">
+                  <span>{t('payments.paid')}:</span>
+                  <span>{formatCurrency(selectedOrder.amountPaid ?? 0)}</span>
+                </div>
+                <div className="flex justify-between font-semibold text-amber-700">
+                  <span>{t('payments.remaining')}:</span>
+                  <span>{formatCurrency(selectedOrder.remainingAmount ?? selectedOrder.totalAmount)}</span>
+                </div>
+              </div>
+
+              <div className="border-t pt-4">
+                <h4 className="font-semibold mb-2">{t('payments.history')}</h4>
+                {selectedOrder.payments && selectedOrder.payments.length > 0 ? (
+                  <div className="space-y-2">
+                    {selectedOrder.payments.map((p) => (
+                      <div key={p.id} className="flex justify-between text-sm border border-gray-100 rounded p-2">
+                        <div>
+                          <span className="font-medium">{formatCurrency(p.amount)}</span>
+                          {p.note && <span className="text-gray-500"> — {p.note}</span>}
+                        </div>
+                        <span className="text-gray-400">{new Date(p.createdAt).toLocaleDateString()}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-500">{t('payments.noPayments')}</p>
+                )}
+              </div>
+
+              {(selectedOrder.remainingAmount ?? selectedOrder.totalAmount) > 0 && (
+                <div className="border-t pt-4">
+                  <h4 className="font-semibold mb-2">{t('payments.addPayment')}</h4>
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={paymentForm.amount}
+                      onChange={(e) => setPaymentForm({ ...paymentForm, amount: e.target.value === '' ? '' : Number(e.target.value) })}
+                      placeholder={t('payments.amount')}
+                      className="border border-gray-300 rounded-lg px-3 py-2 sm:w-32"
+                    />
+                    <input
+                      type="text"
+                      value={paymentForm.note}
+                      onChange={(e) => setPaymentForm({ ...paymentForm, note: e.target.value })}
+                      placeholder={t('payments.noteOptional')}
+                      className="border border-gray-300 rounded-lg px-3 py-2 flex-1"
+                    />
+                    <button
+                      onClick={handleAddPayment}
+                      disabled={submittingPayment}
+                      className="bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 disabled:bg-gray-400 flex items-center justify-center gap-1"
+                    >
+                      <Plus className="w-4 h-4" />
+                      {t('payments.add')}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}

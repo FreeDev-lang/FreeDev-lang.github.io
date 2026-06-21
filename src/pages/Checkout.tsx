@@ -6,6 +6,7 @@ import { cartApi, ordersApi, addressesApi } from '../lib/api'
 import { useCartStore } from '../store/cartStore'
 import toast from 'react-hot-toast'
 import { useCurrency } from '../utils/currency'
+import { useTranslation } from '../utils/i18n'
 import { CreditCard, Truck, FileText, CheckCircle2, MapPin, ShoppingBag } from 'lucide-react'
 
 function CheckoutSection({
@@ -59,6 +60,7 @@ export default function Checkout() {
   const navigate = useNavigate()
   const { clearCart } = useCartStore()
   const { formatCurrency } = useCurrency()
+  const { t } = useTranslation()
   const queryClient = useQueryClient()
 
   const [selectedAddress, setSelectedAddress] = useState<number | null>(null)
@@ -118,6 +120,20 @@ export default function Checkout() {
       </div>
     )
   }
+
+  // Group cart items by their owning store for the order summary. Cart items
+  // may not carry store info; anything without a store falls under "Fria".
+  const storeGroups = (() => {
+    const groups: Record<string, { storeName: string; items: any[]; subtotal: number }> = {}
+    for (const item of cart.items as any[]) {
+      const key = item.storeName || 'Fria'
+      if (!groups[key]) groups[key] = { storeName: key, items: [], subtotal: 0 }
+      groups[key].items.push(item)
+      groups[key].subtotal += item.totalPrice
+    }
+    return Object.values(groups)
+  })()
+  const hasMultipleStores = storeGroups.length > 1
 
   return (
     <div className="section-inner py-8 md:py-10">
@@ -232,16 +248,29 @@ export default function Checkout() {
               <p className="mt-1 text-caption text-neutral-500">{cart.items.length} items</p>
             </div>
 
-            <div className="max-h-48 space-y-3 overflow-y-auto text-body-sm">
-              {cart.items.map((item: any) => (
-                <div key={item.id} className="flex justify-between gap-3 text-neutral-600">
-                  <span className="line-clamp-2 min-w-0">
-                    {item.productName}
-                    <span className="text-neutral-400"> × {item.quantity}</span>
-                  </span>
-                  <span className="shrink-0 font-medium text-neutral-900">
-                    {formatCurrency(item.totalPrice)}
-                  </span>
+            <div className="max-h-60 space-y-4 overflow-y-auto text-body-sm">
+              {storeGroups.map((group) => (
+                <div key={group.storeName} className="space-y-2">
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-eyebrow uppercase text-accent-600">{group.storeName}</span>
+                  </div>
+                  {group.items.map((item: any) => (
+                    <div key={item.id} className="flex justify-between gap-3 text-neutral-600">
+                      <span className="line-clamp-2 min-w-0">
+                        {item.productName}
+                        <span className="text-neutral-400"> × {item.quantity}</span>
+                      </span>
+                      <span className="shrink-0 font-medium text-neutral-900">
+                        {formatCurrency(item.totalPrice)}
+                      </span>
+                    </div>
+                  ))}
+                  {hasMultipleStores && (
+                    <div className="flex justify-between gap-3 border-t border-secondary-100 pt-1.5 text-caption text-neutral-500">
+                      <span>{t('checkout.storeSubtotal')}</span>
+                      <span className="font-medium text-neutral-700">{formatCurrency(group.subtotal)}</span>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

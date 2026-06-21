@@ -54,6 +54,8 @@ export default function AdminAddProduct() {
       const formData = {
         category: product.category,
         model: product.model,
+        nameFr: product.nameFr || '',
+        nameAr: product.nameAr || '',
         color: product.color || '',
         price: product.price,
         source: product.source || '',
@@ -106,6 +108,8 @@ export default function AdminAddProduct() {
       const formData = new FormData()
       formData.append('Category', data.category ?? '')
       formData.append('Model', data.model ?? '')
+      formData.append('NameFr', data.nameFr ?? '')
+      formData.append('NameAr', data.nameAr ?? '')
       formData.append('Price', data.price !== '' && data.price != null ? data.price.toString() : '0')
       formData.append('Color', data.color ?? '')
       formData.append('Source', data.source ?? '')
@@ -350,6 +354,31 @@ export default function AdminAddProduct() {
                     {errors.model && (
                       <p className="text-red-500 text-sm mt-1">{errors.model.message as string}</p>
                     )}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Name (Français)
+                    </label>
+                    <input
+                      type="text"
+                      {...register('nameFr')}
+                      className="input"
+                      placeholder="e.g., Canapé moderne"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Name (العربية)
+                    </label>
+                    <input
+                      type="text"
+                      dir="rtl"
+                      {...register('nameAr')}
+                      className="input"
+                      placeholder="مثال: أريكة عصرية"
+                    />
                   </div>
 
                   <div>

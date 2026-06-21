@@ -8,6 +8,8 @@ import CategoryAttributesModal from '../components/CategoryAttributesModal'
 const emptyForm = {
   name: '',
   displayName: '',
+  displayNameFr: '',
+  displayNameAr: '',
   description: '',
   imagePath: '',
   iconName: '',
@@ -76,6 +78,8 @@ export default function AdminCategories() {
     setForm({
       name: category.name,
       displayName: category.displayName || '',
+      displayNameFr: category.displayNameFr || '',
+      displayNameAr: category.displayNameAr || '',
       description: category.description || '',
       imagePath: category.imagePath || '',
       iconName: category.iconName || '',
@@ -264,6 +268,34 @@ export default function AdminCategories() {
                     onChange={(e) => setForm({ ...form, displayName: e.target.value })}
                     className="w-full border border-gray-300 rounded-lg px-3 py-2"
                     placeholder="Chairs"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Display Name (Français)
+                  </label>
+                  <input
+                    type="text"
+                    value={form.displayNameFr}
+                    onChange={(e) => setForm({ ...form, displayNameFr: e.target.value })}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                    placeholder="Chaises"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Display Name (العربية)
+                  </label>
+                  <input
+                    type="text"
+                    dir="rtl"
+                    value={form.displayNameAr}
+                    onChange={(e) => setForm({ ...form, displayNameAr: e.target.value })}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                    placeholder="كراسي"
                   />
                 </div>
               </div>

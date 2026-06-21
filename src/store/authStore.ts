@@ -32,6 +32,15 @@ export const useAuthStore = create<AuthState>()(
         localStorage.setItem('token', token)
         localStorage.setItem('user', JSON.stringify(user))
         set({ user, token })
+        // After a real (non-guest) sign-in/sign-up, merge any locally stored
+        // guest cart + wishlist into the account, then clear the guest stores.
+        if (!user.isGuest) {
+          import('../utils/mergeGuestData')
+            .then(({ mergeGuestData }) => mergeGuestData())
+            .catch(() => {
+              /* ignore merge failures */
+            })
+        }
       },
       logout: () => {
         localStorage.removeItem('token')

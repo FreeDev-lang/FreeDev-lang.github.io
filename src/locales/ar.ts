@@ -88,6 +88,7 @@ export default {
     rating: 'التقييم',
     noImage: 'لا توجد صورة',
     sale: 'تخفيض',
+    soldBy: 'يُباع بواسطة',
     shareProduct: 'مشاركة المنتج',
     scanQRCode: 'امسح رمز QR لعرضه على الهاتف المحمول',
     availableColors: 'الألوان المتاحة',
@@ -121,6 +122,29 @@ export default {
     paymentNote: 'يتم تحصيل الدفع عند التسليم. يُسجّل طلبك كـ "قيد الانتظار" حتى يؤكده المتجر.',
     noAddresses: 'لا توجد عناوين محفوظة. أضف واحدة في ملفك الشخصي.',
     placingOrder: 'جاري معالجة الطلب...',
+    storeSubtotal: 'المجموع الفرعي للمتجر',
+  },
+  // Wishlist
+  wishlist: {
+    title: 'قائمة رغباتي',
+    empty: 'قائمة رغباتك فارغة',
+    browseProducts: 'تصفح المنتجات',
+  },
+  // Payments / installments
+  payments: {
+    paid: 'المدفوع',
+    remaining: 'المتبقي',
+    history: 'سجل المدفوعات',
+    noPayments: 'لم يتم تسجيل أي مدفوعات بعد',
+    addPayment: 'إضافة دفعة / قسط',
+    amount: 'المبلغ',
+    note: 'ملاحظة',
+    noteOptional: 'ملاحظة (اختياري)',
+    add: 'إضافة',
+    paymentRecorded: 'تم تسجيل الدفعة',
+    paymentFailed: 'فشل تسجيل الدفعة',
+    enterValidAmount: 'أدخل مبلغًا صالحًا',
+    exceedsRemaining: 'المبلغ يتجاوز الرصيد المتبقي',
   },
   // Orders
   orders: {

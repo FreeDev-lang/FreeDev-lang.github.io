@@ -1,15 +1,18 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { ordersApi, receiptsApi } from '../lib/api'
-import { Eye, RefreshCw, DollarSign, Download } from 'lucide-react'
+import { Eye, RefreshCw, DollarSign, Download, Plus } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useCurrency } from '../utils/currency'
+import { useTranslation } from '../utils/i18n'
 
 export default function AdminOrders() {
   const { formatCurrency } = useCurrency()
+  const { t } = useTranslation()
   const [selectedOrder, setSelectedOrder] = useState<any>(null)
   const [showStatusModal, setShowStatusModal] = useState(false)
   const [showRefundModal, setShowRefundModal] = useState(false)
+  const [paymentForm, setPaymentForm] = useState({ amount: '' as number | '', note: '' })
   const [statusForm, setStatusForm] = useState({
     orderStatus: '',
     trackingNumber: '',
@@ -52,6 +55,34 @@ export default function AdminOrders() {
       queryClient.invalidateQueries({ queryKey: ['admin-orders'] })
     },
   })
+
+  const paymentMutation = useMutation({
+    mutationFn: ({ id, data }: any) => ordersApi.addPayment(id, data),
+    onSuccess: () => {
+      toast.success(t('payments.paymentRecorded'))
+      setPaymentForm({ amount: '', note: '' })
+      queryClient.invalidateQueries({ queryKey: ['admin-orders'] })
+      queryClient.invalidateQueries({ queryKey: ['admin-order-detail'] })
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || t('payments.paymentFailed'))
+    },
+  })
+
+  const handleAddPayment = () => {
+    if (!orderDetail) return
+    const amount = Number(paymentForm.amount)
+    const remaining = orderDetail.remainingAmount ?? orderDetail.totalAmount
+    if (!amount || amount <= 0) {
+      toast.error(t('payments.enterValidAmount'))
+      return
+    }
+    if (amount > remaining) {
+      toast.error(t('payments.exceedsRemaining'))
+      return
+    }
+    paymentMutation.mutate({ id: orderDetail.id, data: { amount, note: paymentForm.note || undefined } })
+  }
 
   const handleViewOrder = (order: any) => {
     setSelectedOrder(order)
@@ -235,6 +266,9 @@ export default function AdminOrders() {
                     <div key={item.id} className="border border-gray-200 rounded p-3 flex justify-between">
                       <div>
                         <p className="font-medium">{item.productName}</p>
+                        {item.storeName && (
+                          <p className="text-xs text-gray-500">{item.storeName}</p>
+                        )}
                         <p className="text-sm text-gray-600">Qty: {item.quantity} × {formatCurrency(item.unitPrice)}</p>
                       </div>
                       <p className="font-semibold">{formatCurrency(item.totalPrice)}</p>
@@ -265,7 +299,69 @@ export default function AdminOrders() {
                   <span>Total:</span>
                   <span>{formatCurrency(orderDetail.totalAmount)}</span>
                 </div>
+                <div className="flex justify-between mt-2 text-green-700">
+                  <span>{t('payments.paid')}:</span>
+                  <span>{formatCurrency(orderDetail.amountPaid ?? 0)}</span>
+                </div>
+                <div className="flex justify-between font-semibold text-amber-700">
+                  <span>{t('payments.remaining')}:</span>
+                  <span>{formatCurrency(orderDetail.remainingAmount ?? orderDetail.totalAmount)}</span>
+                </div>
               </div>
+
+              {/* Payment history */}
+              <div className="border-t pt-4">
+                <h4 className="font-semibold mb-2">{t('payments.history')}</h4>
+                {orderDetail.payments && orderDetail.payments.length > 0 ? (
+                  <div className="space-y-2">
+                    {orderDetail.payments.map((p: any) => (
+                      <div key={p.id} className="flex justify-between text-sm border border-gray-100 rounded p-2">
+                        <div>
+                          <span className="font-medium">{formatCurrency(p.amount)}</span>
+                          {p.note && <span className="text-gray-500"> — {p.note}</span>}
+                        </div>
+                        <span className="text-gray-400">{new Date(p.createdAt).toLocaleDateString()}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-500">{t('payments.noPayments')}</p>
+                )}
+              </div>
+
+              {/* Add payment / installment */}
+              {(orderDetail.remainingAmount ?? orderDetail.totalAmount) > 0 && (
+                <div className="border-t pt-4">
+                  <h4 className="font-semibold mb-2">{t('payments.addPayment')}</h4>
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={paymentForm.amount}
+                      onChange={(e) => setPaymentForm({ ...paymentForm, amount: e.target.value === '' ? '' : Number(e.target.value) })}
+                      placeholder={t('payments.amount')}
+                      className="border border-gray-300 rounded-lg px-3 py-2 sm:w-32"
+                    />
+                    <input
+                      type="text"
+                      value={paymentForm.note}
+                      onChange={(e) => setPaymentForm({ ...paymentForm, note: e.target.value })}
+                      placeholder={t('payments.noteOptional')}
+                      className="border border-gray-300 rounded-lg px-3 py-2 flex-1"
+                    />
+                    <button
+                      onClick={handleAddPayment}
+                      disabled={paymentMutation.isPending}
+                      className="bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 disabled:bg-gray-400 flex items-center justify-center gap-1"
+                    >
+                      <Plus className="w-4 h-4" />
+                      {t('payments.add')}
+                    </button>
+                  </div>
+                </div>
+              )}
+
               <div className="border-t pt-4 flex gap-2">
                 <button
                   onClick={async () => {
