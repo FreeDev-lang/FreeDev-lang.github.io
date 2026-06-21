@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { useNavigate, useParams } from 'react-router-dom'
-import { productsApi, categoriesApi, productColorsApi } from '../lib/api'
+import { productsApi, categoriesApi, productColorsApi, storesApi } from '../lib/api'
 import { ArrowLeft, Upload, X, Plus, Trash2, Star } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import toast from 'react-hot-toast'
@@ -27,6 +27,12 @@ export default function AdminAddProduct() {
   const { data: categories } = useQuery({
     queryKey: ['product-categories'],
     queryFn: () => categoriesApi.getAll().then(res => res.data),
+  })
+
+  // Stores for the owning-store selector (multi-store marketplace).
+  const { data: stores = [] } = useQuery({
+    queryKey: ['stores'],
+    queryFn: () => storesApi.getAll().then(res => res.data),
   })
 
   const { data: product, isLoading: isLoadingProduct } = useQuery({
@@ -56,6 +62,7 @@ export default function AdminAddProduct() {
         model: product.model,
         nameFr: product.nameFr || '',
         nameAr: product.nameAr || '',
+        storeId: product.storeId ?? '',
         color: product.color || '',
         price: product.price,
         source: product.source || '',
@@ -110,6 +117,8 @@ export default function AdminAddProduct() {
       formData.append('Model', data.model ?? '')
       formData.append('NameFr', data.nameFr ?? '')
       formData.append('NameAr', data.nameAr ?? '')
+      // Owning store (multi-store marketplace). Only sent when chosen; the backend leaves it unchanged otherwise.
+      if (data.storeId !== '' && data.storeId != null) formData.append('StoreId', data.storeId.toString())
       formData.append('Price', data.price !== '' && data.price != null ? data.price.toString() : '0')
       formData.append('Color', data.color ?? '')
       formData.append('Source', data.source ?? '')
@@ -339,6 +348,19 @@ export default function AdminAddProduct() {
                     {errors.category && (
                       <p className="text-red-500 text-sm mt-1">{errors.category.message as string}</p>
                     )}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Store
+                    </label>
+                    <select {...register('storeId')} className="input">
+                      <option value="">No store (platform)</option>
+                      {stores.map((s: any) => (
+                        <option key={s.id} value={s.id}>{s.name}</option>
+                      ))}
+                    </select>
+                    <p className="text-xs text-gray-400 mt-1">The store that owns and fulfils this product.</p>
                   </div>
 
                   <div>
