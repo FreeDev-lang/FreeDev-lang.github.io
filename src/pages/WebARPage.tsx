@@ -185,6 +185,7 @@ export default function WebARPage() {
           <model-viewer
             ref={modelViewerRef}
             src={finalModelUrl}
+            ios-src={product?.usdzPath || undefined}
             alt={productName}
             ar
             ar-modes="webxr scene-viewer quick-look"
