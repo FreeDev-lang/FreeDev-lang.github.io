@@ -104,6 +104,7 @@ export default function MobileARViewer({ productId, modelUrl, onClose }: MobileA
           <model-viewer
             ref={modelViewerRef}
             src={finalModelUrl}
+            ios-src={product?.usdzPath || undefined}
             alt={product?.model || '3D Model'}
             ar
             ar-modes="webxr scene-viewer quick-look"

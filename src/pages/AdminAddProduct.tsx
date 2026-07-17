@@ -15,6 +15,7 @@ export default function AdminAddProduct() {
   const isEditing = !!id
   const { register, handleSubmit, watch, formState: { errors }, reset } = useForm()
   const [modelFile, setModelFile] = useState<File | null>(null)
+  const [usdzFile, setUsdzFile] = useState<File | null>(null)
   const [imageFiles, setImageFiles] = useState<File[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [activeTab, setActiveTab] = useState<'basic' | 'details' | 'ecommerce' | 'ar' | 'files' | 'attributes' | 'colors'>('basic')
@@ -144,6 +145,7 @@ export default function AdminAddProduct() {
 
       // Files — only append new uploads (model file is optional when editing).
       if (modelFile) formData.append('modelFile', modelFile)
+      if (usdzFile) formData.append('usdzFile', usdzFile)
       imageFiles.forEach((file) => formData.append('imageFiles', file))
 
       let productId = Number(id)
@@ -714,6 +716,38 @@ export default function AdminAddProduct() {
                   {!isEditing && !modelFile && (
                     <p className="text-red-500 text-sm mt-1">3D model file is required</p>
                   )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    iOS AR File (USDZ) <span className="text-gray-400 font-normal">— optional</span>
+                  </label>
+                  <p className="text-sm text-gray-500 mb-2">
+                    {product?.usdzPath
+                      ? 'Current USDZ exists. Upload a new file to replace it.'
+                      : 'Lets iPhone users view this product in their space (AR Quick Look). Convert your GLB with Apple Reality Converter or an online GLB→USDZ tool.'}
+                  </p>
+                  <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg hover:border-primary-500 transition-colors">
+                    <div className="space-y-1 text-center">
+                      <Upload className="mx-auto h-12 w-12 text-gray-400" />
+                      <div className="flex text-sm text-gray-600">
+                        <label className="relative cursor-pointer rounded-md font-medium text-primary-600 hover:text-primary-500">
+                          <span>Upload a file</span>
+                          <input
+                            type="file"
+                            accept=".usdz"
+                            onChange={(e) => setUsdzFile(e.target.files?.[0] ?? null)}
+                            className="sr-only"
+                          />
+                        </label>
+                        <p className="pl-1">or drag and drop</p>
+                      </div>
+                      <p className="text-xs text-gray-500">USDZ files only</p>
+                      {usdzFile && (
+                        <p className="text-sm text-green-600 mt-2">{usdzFile.name}</p>
+                      )}
+                    </div>
+                  </div>
                 </div>
 
                 <div>
