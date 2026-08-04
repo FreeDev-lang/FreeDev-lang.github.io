@@ -150,6 +150,17 @@ export default function Footer() {
           <p className="font-display text-caption italic text-neutral-500">
             {t('footer.signature')}
           </p>
+          <p className="text-caption text-neutral-500">
+            {t('footer.credit')}{' '}
+            <a
+              href="https://oniva-solutions.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-semibold tracking-wide text-neutral-400 transition-colors duration-brand hover:text-accent-300"
+            >
+              Oniva Solutions
+            </a>
+          </p>
         </div>
       </div>
     </footer>

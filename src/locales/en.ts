@@ -273,6 +273,7 @@ export default {
     theApp: 'The app',
     appPitch: 'True-scale AR, photo capture and one-tap ordering — straight from us, no store needed.',
     signature: 'Furniture, reimagined in your space',
+    credit: 'Designed & developed by',
   },
 
   // Home (Maison redesign)

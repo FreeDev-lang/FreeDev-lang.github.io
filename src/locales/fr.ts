@@ -273,6 +273,7 @@ export default {
     theApp: "L'application",
     appPitch: "RA à l'échelle réelle, capture photo et commande en un geste — directement chez nous, sans store.",
     signature: 'Le meuble, réimaginé dans votre espace',
+    credit: 'Conçu et développé par',
   },
 
   // Accueil (refonte Maison)
