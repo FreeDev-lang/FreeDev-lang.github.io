@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { storesApi } from '../lib/api'
+import { sizedImage, IMG } from '../lib/sizedImage'
 import { MapPin, ShoppingBag, Phone, Mail, Navigation } from 'lucide-react'
 import toast from 'react-hot-toast'
 import ProductCard from '../components/ProductCard'
@@ -171,7 +172,7 @@ export default function StoreDetail() {
               }`}
             >
               <img
-                src={slide.imageUrl}
+                src={sizedImage(slide.imageUrl, IMG.hero, 80)}
                 alt={slide.title || 'Store Banner'}
                 className="w-full h-full object-cover"
               />
@@ -220,7 +221,7 @@ export default function StoreDetail() {
           <div className="flex items-start gap-6">
             {store.logoUrl ? (
               <img
-                src={store.logoUrl}
+                src={sizedImage(store.logoUrl, IMG.thumb)}
                 alt={store.name}
                 className="w-24 h-24 rounded-lg object-cover"
               />
@@ -263,14 +264,14 @@ export default function StoreDetail() {
                   {banner.link ? (
                     <Link to={banner.link}>
                       <img
-                        src={banner.imageUrl}
+                        src={sizedImage(banner.imageUrl, IMG.hero, 80)}
                         alt="Store Banner"
                         className="w-full h-48 md:h-64 object-cover"
                       />
                     </Link>
                   ) : (
                     <img
-                      src={banner.imageUrl}
+                      src={sizedImage(banner.imageUrl, IMG.hero, 80)}
                       alt="Store Banner"
                       className="w-full h-48 md:h-64 object-cover"
                     />

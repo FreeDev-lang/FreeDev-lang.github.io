@@ -7,7 +7,6 @@ import { platformApi } from './lib/api'
 import Layout from './components/Layout'
 import Home from './pages/Home'
 import Products from './pages/Products'
-import ProductDetail from './pages/ProductDetail'
 import Cart from './pages/Cart'
 import Checkout from './pages/Checkout'
 import Login from './pages/Login'
@@ -23,6 +22,9 @@ import ProtectedRoute from './components/ProtectedRoute'
 import StoreAdminRoute from './components/StoreAdminRoute'
 import Chatbot from './components/Chatbot'
 
+// Lazy: ProductDetail importe la pile AR (ModelViewer3D → three.js, ~1,1 Mo) ;
+// en import direct, three.js partait dans le graphe initial de TOUTES les pages.
+const ProductDetail = lazy(() => import('./pages/ProductDetail'))
 const ARViewerPage = lazy(() => import('./pages/ARViewerPage'))
 const WebARPage = lazy(() => import('./pages/WebARPage'))
 const SetupAdmin = lazy(() => import('./pages/SetupAdmin'))
@@ -102,7 +104,7 @@ function App() {
         <Route path="/" element={<Layout />}>
           <Route index element={<Home />} />
           <Route path="products" element={<Products />} />
-          <Route path="products/:id" element={<ProductDetail />} />
+          <Route path="products/:id" element={<LazyPage><ProductDetail /></LazyPage>} />
           <Route path="stores" element={<Stores />} />
           <Route path="stores/:slug" element={<StoreDetail />} />
           <Route path="download" element={<DownloadApp />} />

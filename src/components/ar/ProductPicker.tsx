@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { X, Search } from 'lucide-react'
 import { productsApi } from '../../lib/api'
+import { sizedImage, IMG } from '../../lib/sizedImage'
 import type { Product } from './types/ar.types'
 
 interface ProductPickerProps {
@@ -81,7 +82,7 @@ export default function ProductPicker({
                   {product.images && product.images.length > 0 && (
                     <div className="aspect-square rounded-lg overflow-hidden mb-2 bg-gray-100">
                       <img
-                        src={product.images[0]}
+                        src={sizedImage(product.images[0], IMG.thumb)}
                         alt={product.model}
                         className="w-full h-full object-cover"
                       />

@@ -7,6 +7,7 @@ import { useAuthStore } from '../store/authStore'
 import { useWishlistStore } from '../store/wishlistStore'
 import { useCartStore } from '../store/cartStore'
 import { cartApi, wishlistApi } from '../lib/api'
+import { sizedImage, IMG } from '../lib/sizedImage'
 import toast from 'react-hot-toast'
 import { useQueryClient } from '@tanstack/react-query'
 import { useCurrency } from '../utils/currency'
@@ -112,8 +113,9 @@ export default function ProductCard({ product }: ProductCardProps) {
       <Link to={`/products/${product.id}`} className="relative block aspect-square overflow-hidden bg-transparent">
         {product.images && product.images.length > 0 ? (
           <img
-            src={product.images[0]}
+            src={sizedImage(product.images[0], IMG.card)}
             alt={productName}
+            loading="lazy"
             className="h-full w-full object-cover transition-transform duration-brand ease-brand group-hover:scale-[1.04]"
           />
         ) : (

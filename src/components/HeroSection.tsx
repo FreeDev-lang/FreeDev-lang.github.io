@@ -3,6 +3,7 @@ import { ArrowRight, Smartphone, ArrowUpRight } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
 import { marketingApi } from '../lib/api'
+import { sizedImage, IMG } from '../lib/sizedImage'
 import { useTranslation } from '../utils/i18n'
 import { fadeUp, fadeUpLg, transitions } from '../utils/motion'
 
@@ -29,7 +30,7 @@ function AdminBanners() {
               <div className="relative aspect-[21/6] sm:aspect-[21/5] max-h-40 w-full bg-secondary-100">
                 {banner.imageUrl ? (
                   <img
-                    src={banner.imageUrl}
+                    src={sizedImage(banner.imageUrl, IMG.hero, 80)}
                     alt={banner.title || 'Promotional banner'}
                     className="h-full w-full object-cover transition-transform duration-brand group-hover:scale-[1.02]"
                   />

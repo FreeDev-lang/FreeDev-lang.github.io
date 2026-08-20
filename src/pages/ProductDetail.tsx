@@ -2,6 +2,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState, type ReactNode } from 'react'
 import { productsApi, cartApi, wishlistApi, reviewsApi, storesApi } from '../lib/api'
+import { sizedImage, IMG } from '../lib/sizedImage'
 import { ShoppingCart, Heart, Star, ArrowLeft, Package, Truck, QrCode, Box, Store } from 'lucide-react'
 import { useAuthStore } from '../store/authStore'
 import { useWishlistStore } from '../store/wishlistStore'
@@ -192,7 +193,7 @@ export default function ProductDetail() {
               <div className="relative aspect-square overflow-hidden rounded-card bg-transparent shadow-card-default">
                 {product.images && product.images.length > 0 ? (
                   <img
-                    src={product.images[0]}
+                    src={sizedImage(product.images[0], IMG.hero, 80)}
                     alt={productName}
                     className="h-full w-full object-cover"
                   />
@@ -222,8 +223,9 @@ export default function ProductDetail() {
                       className="aspect-square overflow-hidden rounded-btn bg-transparent ring-2 ring-transparent ring-offset-2 transition-all duration-brand hover:ring-secondary-300"
                     >
                       <img
-                        src={img}
+                        src={sizedImage(img, IMG.thumb)}
                         alt={`${productName} ${idx + 2}`}
+                        loading="lazy"
                         className="h-full w-full object-cover"
                       />
                     </div>

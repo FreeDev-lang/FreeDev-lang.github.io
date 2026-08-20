@@ -63,9 +63,11 @@ export default defineConfig({
         // Ensure proper module format
         format: 'es',
         manualChunks(id) {
-          if (id.includes('node_modules/three') || id.includes('@react-three/fiber') || id.includes('@react-three/drei') || id.includes('@react-three/xr')) {
-            return 'three'
-          }
+          // PAS de chunk manuel pour three/@react-three : la regle capturait
+          // aussi un module requis par le graphe initial, ce qui forcait un
+          // import statique (+ modulepreload) du chunk de 1,1 Mo sur TOUTES
+          // les pages. Les pages AR etant lazy, Rollup isole three tout seul
+          // dans un chunk charge a la demande.
           if (id.includes('node_modules/framer-motion')) {
             return 'motion'
           }
